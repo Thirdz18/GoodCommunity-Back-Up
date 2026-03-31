@@ -1,0 +1,10 @@
+{
+  "name": "goodmarket-wc-service",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Server-side WalletConnect v2 session service",
+  "main": "wc_service.js",
+  "dependencies": {
+    "@walletconnect/sign-client": "2.17.0"
+  }
+}
