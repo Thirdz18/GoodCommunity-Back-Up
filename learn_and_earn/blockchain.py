@@ -1,15 +1,9 @@
-"""
-Learn & Earn Contract Service
-
-This service interacts with the deployed LearnAndEarnRewards smart contract
-for G$ token disbursements on the Celo network.
-
-Uses LEARN_WALLET_PRIVATE_KEY as the contract owner to sign all transactions.
-"""
-
 import os
-import json
+import asyncio
 import logging
+import time
+import uuid
+from decimal import Decimal, ROUND_DOWN
 from datetime import datetime
 from web3 import Web3
 from eth_account import Account
@@ -17,607 +11,408 @@ from eth_account import Account
 logger = logging.getLogger(__name__)
 
 
-CONTRACT_ABI = [
-    {
-        "inputs": [{"name": "amount", "type": "uint256"}],
-        "name": "deposit",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [{"name": "from", "type": "address"}, {"name": "amount", "type": "uint256"}],
-        "name": "depositFrom",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {"name": "recipient", "type": "address"},
-            {"name": "amount", "type": "uint256"},
-            {"name": "quizId", "type": "string"}
-        ],
-        "name": "disburseReward",
-        "outputs": [{"name": "", "type": "bytes32"}],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {"name": "recipients", "type": "address[]"},
-            {"name": "amounts", "type": "uint256[]"},
-            {"name": "quizIds", "type": "string[]"}
-        ],
-        "name": "batchDisburseRewards",
-        "outputs": [{"name": "", "type": "bytes32[]"}],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [{"name": "amount", "type": "uint256"}],
-        "name": "withdraw",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "withdrawAll",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getContractBalance",
-        "outputs": [{"name": "", "type": "uint256"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [{"name": "user", "type": "address"}],
-        "name": "getUserStats",
-        "outputs": [
-            {"name": "totalRewards", "type": "uint256"},
-            {"name": "rewardCount", "type": "uint256"}
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getContractStats",
-        "outputs": [
-            {"name": "balance", "type": "uint256"},
-            {"name": "deposited", "type": "uint256"},
-            {"name": "disbursed", "type": "uint256"},
-            {"name": "withdrawn", "type": "uint256"}
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "owner",
-        "outputs": [{"name": "", "type": "address"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "paused",
-        "outputs": [{"name": "", "type": "bool"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "pause",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "unpause",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "maxDisbursementAmount",
-        "outputs": [{"name": "", "type": "uint256"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "minDisbursementAmount",
-        "outputs": [{"name": "", "type": "uint256"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [{"name": "newMax", "type": "uint256"}],
-        "name": "setMaxDisbursementAmount",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [{"name": "newMin", "type": "uint256"}],
-        "name": "setMinDisbursementAmount",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [{"name": "rewardId", "type": "bytes32"}],
-        "name": "isRewardProcessed",
-        "outputs": [{"name": "", "type": "bool"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {"name": "recipient", "type": "address"},
-            {"name": "quizId", "type": "string"}
-        ],
-        "name": "isQuizRewardClaimed",
-        "outputs": [{"name": "", "type": "bool"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {"name": "recipient", "type": "address"},
-            {"name": "quizId", "type": "string"}
-        ],
-        "name": "getRewardId",
-        "outputs": [{"name": "", "type": "bytes32"}],
-        "stateMutability": "pure",
-        "type": "function"
-    }
-]
+class LearnBlockchainService:
+    """Learn & Earn Smart Contract Disbursement Service
+    
+    Uses the deployed LearnAndEarnRewards smart contract for secure G$ disbursements.
+    Falls back to direct transfer only if contract is not configured.
+    """
 
-ERC20_APPROVE_ABI = [
-    {
-        "inputs": [
-            {"name": "spender", "type": "address"},
-            {"name": "amount", "type": "uint256"}
-        ],
-        "name": "approve",
-        "outputs": [{"name": "", "type": "bool"}],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {"name": "owner", "type": "address"},
-            {"name": "spender", "type": "address"}
-        ],
-        "name": "allowance",
-        "outputs": [{"name": "", "type": "uint256"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [{"name": "account", "type": "address"}],
-        "name": "balanceOf",
-        "outputs": [{"name": "", "type": "uint256"}],
-        "stateMutability": "view",
-        "type": "function"
-    }
-]
-
-
-class LearnEarnContractService:
-    """Service for interacting with the Learn & Earn Rewards smart contract"""
+    MAX_RETRIES = 3
+    RETRY_DELAY_BASE = 2
 
     def __init__(self):
         self.celo_rpc_url = os.getenv('CELO_RPC_URL', 'https://forno.celo.org')
         self.chain_id = int(os.getenv('CHAIN_ID', 42220))
         self.gooddollar_address = os.getenv('GOODDOLLAR_CONTRACT', '0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A')
         self.contract_address = os.getenv('LEARN_EARN_CONTRACT_ADDRESS')
-        self.learn_wallet_key = os.getenv('LEARN_WALLET_PRIVATE_KEY')
+        self._wallet_key = os.getenv('LEARN_WALLET_PRIVATE_KEY')
 
-        self.w3 = Web3(Web3.HTTPProvider(self.celo_rpc_url))
+        self.w3 = Web3(Web3.HTTPProvider(self.celo_rpc_url, request_kwargs={'timeout': 30}))
         self.contract = None
-        self.gooddollar_contract = None
         self.owner_account = None
+
+        if self.w3.is_connected():
+            logger.info("Connected to Celo network for Learn & Earn")
+        else:
+            logger.error("Failed to connect to Celo network")
 
         self._initialize()
 
     def _initialize(self):
-        """Initialize Web3 connection and contract instances"""
+        """Initialize contract and wallet"""
         try:
-            if not self.w3.is_connected():
-                logger.error("❌ Failed to connect to Celo network")
-                return
-
-            logger.info("✅ Connected to Celo network for Learn & Earn Contract")
-
             if self.contract_address:
                 self.contract = self.w3.eth.contract(
                     address=Web3.to_checksum_address(self.contract_address),
-                    abi=CONTRACT_ABI
+                    abi=self._get_contract_abi()
                 )
-                logger.info(f"📋 Learn & Earn Contract loaded: {self.contract_address}")
+                logger.info(f"Learn & Earn Contract loaded: {self.contract_address[:10]}...")
             else:
-                logger.warning("⚠️ LEARN_EARN_CONTRACT_ADDRESS not set - deploy contract first")
+                logger.warning("Learn & Earn contract not configured")
 
-            self.gooddollar_contract = self.w3.eth.contract(
-                address=Web3.to_checksum_address(self.gooddollar_address),
-                abi=ERC20_APPROVE_ABI
-            )
-
-            if self.learn_wallet_key:
-                if self.learn_wallet_key.startswith('0x'):
-                    self.owner_account = Account.from_key(self.learn_wallet_key)
-                else:
-                    self.owner_account = Account.from_key('0x' + self.learn_wallet_key)
-                logger.info(f"👛 Owner wallet: {self.owner_account.address}")
+            if self._wallet_key:
+                key = self._wallet_key if self._wallet_key.startswith('0x') else '0x' + self._wallet_key
+                self.owner_account = Account.from_key(key)
+                logger.info("Learn & Earn wallet configured")
             else:
-                logger.error("❌ LEARN_WALLET_PRIVATE_KEY not configured")
+                logger.warning("Learn & Earn wallet not configured")
 
         except Exception as e:
-            logger.error(f"❌ Initialization error: {e}")
+            logger.error(f"Initialization error: {type(e).__name__}")
 
-    def _send_transaction(self, txn_builder, gas_limit=300000):
-        """Build, sign, and send a transaction"""
+    @property
+    def is_configured(self) -> bool:
+        """Check if the service is properly configured (without exposing private key)"""
+        return self.owner_account is not None
+
+    def _get_contract_abi(self):
+        """Get minimal ABI for contract interactions"""
+        return [
+            {"inputs": [], "name": "getContractBalance", "outputs": [{"type": "uint256"}], "stateMutability": "view", "type": "function"},
+            {"inputs": [{"name": "recipient", "type": "address"}, {"name": "amount", "type": "uint256"}, {"name": "quizId", "type": "string"}], "name": "disburseReward", "outputs": [{"type": "bytes32"}], "stateMutability": "nonpayable", "type": "function"},
+            {"inputs": [{"name": "recipient", "type": "address"}, {"name": "quizId", "type": "string"}], "name": "isQuizRewardClaimed", "outputs": [{"type": "bool"}], "stateMutability": "view", "type": "function"},
+            {"inputs": [], "name": "paused", "outputs": [{"type": "bool"}], "stateMutability": "view", "type": "function"},
+            {"inputs": [], "name": "maxDisbursementAmount", "outputs": [{"type": "uint256"}], "stateMutability": "view", "type": "function"},
+            {"inputs": [], "name": "minDisbursementAmount", "outputs": [{"type": "uint256"}], "stateMutability": "view", "type": "function"},
+        ]
+
+    def _get_erc20_abi(self):
+        """Get ERC20 ABI for balance checks"""
+        return [
+            {"inputs": [{"name": "account", "type": "address"}], "name": "balanceOf", "outputs": [{"type": "uint256"}], "stateMutability": "view", "type": "function"},
+        ]
+
+    def _generate_quiz_id(self, wallet_address: str, quiz_result_summary: dict = None) -> str:
+        """Generate a unique, deterministic quiz ID using wallet + timestamp + uuid"""
+        timestamp = int(datetime.now().timestamp())
+        unique_part = uuid.uuid4().hex[:8]
+        short_wallet = wallet_address[-8:].lower()
+        return f"quiz_{short_wallet}_{timestamp}_{unique_part}"
+
+    def _safe_amount_wei(self, amount: float) -> int:
+        """Convert G$ amount to wei safely, avoiding floating point precision issues.
+        
+        Uses Decimal for precise conversion to prevent amounts like 1000.0000000000001
+        from exceeding the contract's maxDisbursementAmount.
+        """
+        d_amount = Decimal(str(amount)).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
+        amount_wei = int(d_amount * Decimal('1000000000000000000'))
+
         try:
-            nonce = self.w3.eth.get_transaction_count(self.owner_account.address)
-            gas_price = int(self.w3.eth.gas_price * 1.2)
+            if self.contract:
+                max_wei = self.contract.functions.maxDisbursementAmount().call()
+                min_wei = self.contract.functions.minDisbursementAmount().call()
 
-            txn = txn_builder.build_transaction({
+                if amount_wei > max_wei:
+                    logger.warning(f"Amount {amount_wei} exceeds max {max_wei}, capping to max")
+                    amount_wei = max_wei
+                elif amount_wei < min_wei:
+                    logger.warning(f"Amount {amount_wei} below min {min_wei}, raising to min")
+                    amount_wei = min_wei
+        except Exception as e:
+            logger.warning(f"Could not check disbursement limits: {e}")
+
+        return amount_wei
+
+    async def get_contract_balance(self) -> float:
+        """Get the G$ balance of the Learn & Earn contract"""
+        try:
+            if not self.contract:
+                logger.error("Contract not configured")
+                return 0.0
+
+            balance_wei = self.contract.functions.getContractBalance().call()
+            balance_g = balance_wei / (10 ** 18)
+            logger.info(f"Contract balance: {balance_g:.2f} G$")
+            return balance_g
+
+        except Exception as e:
+            logger.error(f"Error getting contract balance: {type(e).__name__}: {e}")
+            return 0.0
+
+    async def get_learn_wallet_balance(self) -> float:
+        """Get the G$ balance of the Learn wallet (for legacy compatibility)"""
+        try:
+            if self.contract:
+                return await self.get_contract_balance()
+
+            if not self.owner_account:
+                return 0.0
+
+            erc20 = self.w3.eth.contract(
+                address=Web3.to_checksum_address(self.gooddollar_address),
+                abi=self._get_erc20_abi()
+            )
+            balance_wei = erc20.functions.balanceOf(self.owner_account.address).call()
+            return balance_wei / (10 ** 18)
+
+        except Exception as e:
+            logger.error(f"Error getting balance: {type(e).__name__}: {e}")
+            return 0.0
+
+    async def send_g_reward(self, wallet_address: str, amount: float, quiz_result_summary: dict = None) -> dict:
+        """Send G$ rewards - uses smart contract with unique quiz ID"""
+        try:
+            quiz_id = self._generate_quiz_id(wallet_address, quiz_result_summary)
+            logger.info(f"Generated unique quiz_id: {quiz_id}")
+            return await self.disburse_quiz_reward(wallet_address, amount, quiz_id)
+
+        except Exception as e:
+            logger.error(f"Error sending reward: {type(e).__name__}: {e}")
+            return {"success": False, "error": "Failed to send reward"}
+
+    async def disburse_quiz_reward(self, wallet_address: str, amount: float, quiz_id: str) -> dict:
+        """Send G$ rewards via smart contract with retry logic"""
+        last_error = None
+
+        for attempt in range(1, self.MAX_RETRIES + 1):
+            try:
+                result = await self._attempt_disburse(wallet_address, amount, quiz_id, attempt)
+
+                if result.get('success'):
+                    return result
+
+                if result.get('permanent_failure'):
+                    return result
+
+                last_error = result.get('error', 'Unknown error')
+                logger.warning(f"Attempt {attempt}/{self.MAX_RETRIES} failed: {last_error}")
+
+                if attempt < self.MAX_RETRIES:
+                    delay = self.RETRY_DELAY_BASE ** attempt
+                    logger.info(f"Retrying in {delay}s...")
+                    await asyncio.sleep(delay)
+
+            except Exception as e:
+                last_error = str(e)
+                logger.error(f"Attempt {attempt}/{self.MAX_RETRIES} exception: {type(e).__name__}: {e}")
+
+                if attempt < self.MAX_RETRIES:
+                    delay = self.RETRY_DELAY_BASE ** attempt
+                    await asyncio.sleep(delay)
+
+        error_msg = self._sanitize_error(last_error or "Failed after all retries")
+        return {"success": False, "error": error_msg}
+
+    async def _attempt_direct_transfer(self, wallet_address: str, amount: float, attempt: int) -> dict:
+        """Direct ERC20 transfer fallback when smart contract is not configured"""
+        logger.info(f"Direct ERC20 transfer attempt {attempt}: {amount} G$ to {wallet_address[:10]}...")
+        try:
+            erc20_abi = [
+                {"inputs": [{"name": "recipient", "type": "address"}, {"name": "amount", "type": "uint256"}], "name": "transfer", "outputs": [{"type": "bool"}], "stateMutability": "nonpayable", "type": "function"},
+                {"inputs": [{"name": "account", "type": "address"}], "name": "balanceOf", "outputs": [{"type": "uint256"}], "stateMutability": "view", "type": "function"},
+            ]
+            token = self.w3.eth.contract(
+                address=Web3.to_checksum_address(self.gooddollar_address),
+                abi=erc20_abi
+            )
+
+            amount_wei = int(Decimal(str(amount)).quantize(Decimal('0.01'), rounding=ROUND_DOWN) * Decimal('1000000000000000000'))
+
+            balance_wei = token.functions.balanceOf(self.owner_account.address).call()
+            balance_g = balance_wei / (10 ** 18)
+            logger.info(f"Learn wallet balance: {balance_g:.4f} G$, need: {amount} G$")
+
+            if balance_wei < amount_wei:
+                return {"success": False, "error": "Rewards pool is currently depleted. Please try again later.", "permanent_failure": True}
+
+            nonce = self.w3.eth.get_transaction_count(self.owner_account.address, 'pending')
+            gas_price = int(self.w3.eth.gas_price * 1.2)
+            if attempt > 1:
+                gas_price = int(gas_price * (1 + (attempt * 0.1)))
+
+            try:
+                estimated_gas = token.functions.transfer(
+                    Web3.to_checksum_address(wallet_address), amount_wei
+                ).estimate_gas({'from': self.owner_account.address})
+                gas_limit = int(estimated_gas * 1.3)
+            except Exception:
+                gas_limit = 100000
+
+            txn = token.functions.transfer(
+                Web3.to_checksum_address(wallet_address), amount_wei
+            ).build_transaction({
                 'chainId': self.chain_id,
                 'gas': gas_limit,
                 'gasPrice': gas_price,
                 'nonce': nonce,
             })
 
-            signed_txn = self.w3.eth.account.sign_transaction(txn, self.learn_wallet_key)
+            signed_txn = self.w3.eth.account.sign_transaction(txn, self._wallet_key)
             tx_hash = self.w3.eth.send_raw_transaction(signed_txn.raw_transaction)
             tx_hash_hex = tx_hash.hex()
-
             if not tx_hash_hex.startswith('0x'):
                 tx_hash_hex = '0x' + tx_hash_hex
 
-            logger.info(f"📡 Transaction sent: {tx_hash_hex}")
-
+            logger.info(f"Direct transfer sent: {tx_hash_hex}")
             receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
 
+            if receipt.status == 1:
+                logger.info(f"Direct transfer success: {amount} G$ → {wallet_address[:10]} TX: {tx_hash_hex}")
+                return {
+                    "success": True,
+                    "tx_hash": tx_hash_hex,
+                    "amount": amount,
+                    "explorer_url": f"https://celoscan.io/tx/{tx_hash_hex}",
+                    "gas_used": receipt.gasUsed,
+                    "block_number": receipt.blockNumber,
+                    "method": "direct_transfer"
+                }
+            else:
+                logger.error(f"Direct transfer REVERTED: {tx_hash_hex}")
+                return {"success": False, "error": "Transaction reverted. Please try again."}
+
+        except Exception as e:
+            logger.error(f"Direct transfer error: {type(e).__name__}: {e}")
+            return {"success": False, "error": self._sanitize_error(str(e))}
+
+    async def _attempt_disburse(self, wallet_address: str, amount: float, quiz_id: str, attempt: int) -> dict:
+        """Single attempt to disburse reward"""
+        logger.info(f"Quiz reward attempt {attempt}: {amount} G$ to {wallet_address[:10]}...")
+
+        if not self.owner_account:
+            return {"success": False, "error": "Reward system not configured. Please contact support.", "permanent_failure": True}
+
+        if not self._wallet_key:
+            return {"success": False, "error": "Reward system not configured. Please contact support.", "permanent_failure": True}
+
+        if not self.contract:
+            logger.warning("Smart contract not configured — using direct ERC20 transfer fallback")
+            return await self._attempt_direct_transfer(wallet_address, amount, attempt)
+
+        try:
+            is_paused = self.contract.functions.paused().call()
+            if is_paused:
+                return {"success": False, "error": "Reward system is temporarily paused. Please try again later.", "permanent_failure": True}
+        except Exception as e:
+            logger.warning(f"Paused check failed: {e}")
+
+        balance = await self.get_contract_balance()
+        if balance < amount:
+            logger.warning(f"Insufficient contract balance: {balance:.2f} G$ < {amount} G$ — falling back to direct ERC20 transfer")
+            return await self._attempt_direct_transfer(wallet_address, amount, attempt)
+
+        try:
+            already_claimed = self.contract.functions.isQuizRewardClaimed(
+                Web3.to_checksum_address(wallet_address),
+                quiz_id
+            ).call()
+            if already_claimed:
+                return {"success": False, "error": "Reward already claimed for this quiz.", "permanent_failure": True}
+        except Exception as e:
+            logger.warning(f"Claim check failed: {e}")
+
+        amount_wei = self._safe_amount_wei(amount)
+        logger.info(f"Amount: {amount} G$ = {amount_wei} wei (safe conversion)")
+
+        nonce = self.w3.eth.get_transaction_count(self.owner_account.address, 'pending')
+        gas_price = int(self.w3.eth.gas_price * 1.2)
+
+        if attempt > 1:
+            gas_price = int(gas_price * (1 + (attempt * 0.1)))
+            logger.info(f"Bumped gas price for retry attempt {attempt}")
+
+        try:
+            estimated_gas = self.contract.functions.disburseReward(
+                Web3.to_checksum_address(wallet_address),
+                amount_wei,
+                quiz_id
+            ).estimate_gas({'from': self.owner_account.address})
+            gas_limit = int(estimated_gas * 1.3)
+            logger.info(f"Estimated gas: {estimated_gas}, using limit: {gas_limit}")
+        except Exception as gas_err:
+            logger.warning(f"Gas estimation failed ({gas_err}), using default 500000")
+            gas_limit = 500000
+
+        txn = self.contract.functions.disburseReward(
+            Web3.to_checksum_address(wallet_address),
+            amount_wei,
+            quiz_id
+        ).build_transaction({
+            'chainId': self.chain_id,
+            'gas': gas_limit,
+            'gasPrice': gas_price,
+            'nonce': nonce,
+        })
+
+        signed_txn = self.w3.eth.account.sign_transaction(txn, self._wallet_key)
+
+        logger.info(f"Sending reward transaction (nonce={nonce}, gas={gas_limit}, gasPrice={gas_price})...")
+        tx_hash = self.w3.eth.send_raw_transaction(signed_txn.raw_transaction)
+        tx_hash_hex = tx_hash.hex()
+        if not tx_hash_hex.startswith('0x'):
+            tx_hash_hex = '0x' + tx_hash_hex
+
+        logger.info(f"Transaction sent: {tx_hash_hex}")
+
+        receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+
+        if receipt.status == 1:
+            logger.info(f"Reward sent successfully: {amount} G$ - TX: {tx_hash_hex} - Block: {receipt.blockNumber} - Gas: {receipt.gasUsed}")
             return {
-                "success": receipt.status == 1,
+                "success": True,
                 "tx_hash": tx_hash_hex,
+                "amount": amount,
+                "explorer_url": f"https://celoscan.io/tx/{tx_hash_hex}",
                 "gas_used": receipt.gasUsed,
-                "block_number": receipt.blockNumber,
+                "block_number": receipt.blockNumber
+            }
+        else:
+            revert_reason = "Unknown"
+            try:
+                self.w3.eth.call({
+                    'to': txn['to'],
+                    'from': self.owner_account.address,
+                    'data': txn['data'],
+                    'value': txn.get('value', 0),
+                }, receipt.blockNumber
+                )
+            except Exception as revert_err:
+                revert_reason = str(revert_err)
+
+            logger.error(f"Transaction REVERTED: {tx_hash_hex} - Block: {receipt.blockNumber} - Gas: {receipt.gasUsed}")
+            logger.error(f"Revert reason: {revert_reason}")
+            logger.error(f"Revert details - Wallet: {wallet_address[:10]}, Amount: {amount} G$ ({amount_wei} wei), QuizID: {quiz_id}")
+            return {
+                "success": False,
+                "error": f"Transaction reverted: {revert_reason}",
+                "tx_hash": tx_hash_hex,
                 "explorer_url": f"https://celoscan.io/tx/{tx_hash_hex}"
             }
 
-        except Exception as e:
-            logger.error(f"❌ Transaction error: {e}")
-            return {"success": False, "error": str(e)}
-
-    async def deposit_g_dollars(self, amount: float) -> dict:
-        """
-        Deposit G$ tokens into the contract
-        
-        Args:
-            amount: Amount in G$ to deposit
-            
-        Returns:
-            Dict with transaction result
-        """
-        try:
-            if not self.contract:
-                return {"success": False, "error": "Contract not initialized"}
-
-            amount_wei = int(amount * 10**18)
-            
-            logger.info(f"💰 Depositing {amount} G$ to contract...")
-
-            allowance = self.gooddollar_contract.functions.allowance(
-                self.owner_account.address,
-                self.contract_address
-            ).call()
-
-            if allowance < amount_wei:
-                logger.info("🔓 Approving G$ spending...")
-                approve_result = self._send_transaction(
-                    self.gooddollar_contract.functions.approve(
-                        Web3.to_checksum_address(self.contract_address),
-                        amount_wei
-                    ),
-                    gas_limit=100000
-                )
-                if not approve_result["success"]:
-                    return {"success": False, "error": "Approval failed", "details": approve_result}
-
-            deposit_result = self._send_transaction(
-                self.contract.functions.deposit(amount_wei),
-                gas_limit=200000
-            )
-
-            if deposit_result["success"]:
-                logger.info(f"✅ Deposited {amount} G$ successfully")
-
-            return deposit_result
-
-        except Exception as e:
-            logger.error(f"❌ Deposit error: {e}")
-            return {"success": False, "error": str(e)}
-
-    async def disburse_reward(self, recipient: str, amount: float, quiz_id: str) -> dict:
-        """
-        Disburse G$ reward to a recipient using the smart contract
-        
-        Args:
-            recipient: Wallet address of the recipient
-            amount: Amount in G$ to send
-            quiz_id: Quiz identifier for tracking
-            
-        Returns:
-            Dict with transaction result
-        """
-        try:
-            if not self.contract:
-                return {"success": False, "error": "Contract not initialized"}
-
-            amount_wei = int(amount * 10**18)
-            
-            logger.info(f"💰 Disbursing {amount} G$ to {recipient[:8]}... via contract")
-
-            contract_balance = self.contract.functions.getContractBalance().call()
-            if contract_balance < amount_wei:
-                logger.error(f"❌ Insufficient contract balance: {contract_balance / 10**18} G$")
-                return {
-                    "success": False,
-                    "error": "Insufficient contract balance",
-                    "insufficient_balance": True
-                }
-
-            result = self._send_transaction(
-                self.contract.functions.disburseReward(
-                    Web3.to_checksum_address(recipient),
-                    amount_wei,
-                    quiz_id
-                ),
-                gas_limit=300000
-            )
-
-            if result["success"]:
-                logger.info(f"✅ SMART CONTRACT SUCCESS: {amount} G$ disbursed - TX: {result['tx_hash']}")
-
-            return result
-
-        except Exception as e:
-            logger.error(f"❌ Disbursement error: {e}")
-            return {"success": False, "error": str(e)}
-
-    async def batch_disburse_rewards(self, recipients: list, amounts: list, quiz_ids: list) -> dict:
-        """
-        Batch disburse G$ rewards to multiple recipients
-        
-        Args:
-            recipients: List of wallet addresses
-            amounts: List of amounts in G$
-            quiz_ids: List of quiz identifiers
-            
-        Returns:
-            Dict with transaction result
-        """
-        try:
-            if not self.contract:
-                return {"success": False, "error": "Contract not initialized"}
-
-            if len(recipients) != len(amounts) or len(recipients) != len(quiz_ids):
-                return {"success": False, "error": "Arrays length mismatch"}
-
-            if len(recipients) > 50:
-                return {"success": False, "error": "Batch too large (max 50)"}
-
-            amounts_wei = [int(a * 10**18) for a in amounts]
-            total_amount = sum(amounts_wei)
-            
-            logger.info(f"💰 Batch disbursing to {len(recipients)} recipients...")
-
-            contract_balance = self.contract.functions.getContractBalance().call()
-            if contract_balance < total_amount:
-                return {
-                    "success": False,
-                    "error": "Insufficient contract balance",
-                    "insufficient_balance": True
-                }
-
-            recipients_checksum = [Web3.to_checksum_address(r) for r in recipients]
-
-            result = self._send_transaction(
-                self.contract.functions.batchDisburseRewards(
-                    recipients_checksum,
-                    amounts_wei,
-                    quiz_ids
-                ),
-                gas_limit=500000 + (len(recipients) * 50000)
-            )
-
-            if result["success"]:
-                logger.info(f"✅ Batch disbursement successful - TX: {result['tx_hash']}")
-
-            return result
-
-        except Exception as e:
-            logger.error(f"❌ Batch disbursement error: {e}")
-            return {"success": False, "error": str(e)}
-
-    async def withdraw_g_dollars(self, amount: float) -> dict:
-        """
-        Withdraw G$ tokens from the contract (owner only)
-        
-        Args:
-            amount: Amount in G$ to withdraw
-            
-        Returns:
-            Dict with transaction result
-        """
-        try:
-            if not self.contract:
-                return {"success": False, "error": "Contract not initialized"}
-
-            amount_wei = int(amount * 10**18)
-            
-            logger.info(f"💸 Withdrawing {amount} G$ from contract...")
-
-            result = self._send_transaction(
-                self.contract.functions.withdraw(amount_wei),
-                gas_limit=200000
-            )
-
-            if result["success"]:
-                logger.info(f"✅ Withdrew {amount} G$ successfully")
-
-            return result
-
-        except Exception as e:
-            logger.error(f"❌ Withdraw error: {e}")
-            return {"success": False, "error": str(e)}
-
-    async def withdraw_all(self) -> dict:
-        """Withdraw all G$ tokens from the contract (owner only)"""
-        try:
-            if not self.contract:
-                return {"success": False, "error": "Contract not initialized"}
-
-            logger.info("💸 Withdrawing all G$ from contract...")
-
-            result = self._send_transaction(
-                self.contract.functions.withdrawAll(),
-                gas_limit=200000
-            )
-
-            if result["success"]:
-                logger.info("✅ Withdrew all G$ successfully")
-
-            return result
-
-        except Exception as e:
-            logger.error(f"❌ Withdraw all error: {e}")
-            return {"success": False, "error": str(e)}
-
-    def get_contract_balance(self) -> float:
-        """Get the G$ balance of the contract"""
-        try:
-            if not self.contract:
-                return 0.0
-
-            balance_wei = self.contract.functions.getContractBalance().call()
-            return balance_wei / 10**18
-
-        except Exception as e:
-            logger.error(f"❌ Error getting contract balance: {e}")
-            return 0.0
-
-    def get_contract_stats(self) -> dict:
-        """Get contract statistics"""
-        try:
-            if not self.contract:
-                return {}
-
-            stats = self.contract.functions.getContractStats().call()
-            
-            return {
-                "balance": stats[0] / 10**18,
-                "total_deposited": stats[1] / 10**18,
-                "total_disbursed": stats[2] / 10**18,
-                "total_withdrawn": stats[3] / 10**18
-            }
-
-        except Exception as e:
-            logger.error(f"❌ Error getting contract stats: {e}")
-            return {}
-
-    def get_user_stats(self, user_address: str) -> dict:
-        """Get user reward statistics"""
-        try:
-            if not self.contract:
-                return {}
-
-            stats = self.contract.functions.getUserStats(
-                Web3.to_checksum_address(user_address)
-            ).call()
-            
-            return {
-                "total_rewards": stats[0] / 10**18,
-                "reward_count": stats[1]
-            }
-
-        except Exception as e:
-            logger.error(f"❌ Error getting user stats: {e}")
-            return {}
-
-    def is_paused(self) -> bool:
-        """Check if contract is paused"""
-        try:
-            if not self.contract:
-                return True
-            return self.contract.functions.paused().call()
-        except Exception as e:
-            logger.error(f"❌ Error checking paused status: {e}")
-            return True
-
-    def is_quiz_reward_claimed(self, recipient: str, quiz_id: str) -> bool:
-        """
-        Check if a reward was already claimed for a specific quiz
-        
-        Args:
-            recipient: Wallet address of the user
-            quiz_id: Quiz identifier
-            
-        Returns:
-            True if reward was already claimed
-        """
-        try:
-            if not self.contract:
-                return False
-
-            is_claimed = self.contract.functions.isQuizRewardClaimed(
-                Web3.to_checksum_address(recipient),
-                quiz_id
-            ).call()
-            
-            return is_claimed
-
-        except Exception as e:
-            logger.error(f"❌ Error checking quiz reward status: {e}")
-            return False
-
-    def get_reward_id(self, recipient: str, quiz_id: str) -> str:
-        """
-        Get the deterministic reward ID for a recipient + quiz combination
-        
-        Args:
-            recipient: Wallet address of the user
-            quiz_id: Quiz identifier
-            
-        Returns:
-            Reward ID as hex string
-        """
-        try:
-            if not self.contract:
-                return ""
-
-            reward_id = self.contract.functions.getRewardId(
-                Web3.to_checksum_address(recipient),
-                quiz_id
-            ).call()
-            
-            return reward_id.hex()
-
-        except Exception as e:
-            logger.error(f"❌ Error getting reward ID: {e}")
-            return ""
+    def _sanitize_error(self, error_msg: str) -> str:
+        """Remove sensitive info from error messages shown to users"""
+        error_lower = error_msg.lower()
+        if 'private' in error_lower or 'key' in error_lower:
+            return "Configuration error"
+        elif 'insufficient' in error_lower:
+            return "Rewards pool is currently depleted"
+        elif 'nonce' in error_lower:
+            return "Transaction conflict, please try again."
+        elif 'already processed' in error_lower or 'already claimed' in error_lower:
+            return "Reward already claimed for this quiz."
+        elif 'timeout' in error_lower or 'timed out' in error_lower:
+            return "Network timeout. Please try again."
+        elif 'revert' in error_lower or 'execution reverted' in error_lower:
+            return "Transaction was rejected by the contract. Please try again."
+        else:
+            return "Failed to process reward. Please try again."
 
 
-learn_earn_contract_service = LearnEarnContractService()
+learn_blockchain_service = LearnBlockchainService()
+
+
+def disburse_rewards(wallet_address, amount, score):
+    """Legacy function for backward compatibility"""
+    import asyncio
+    quiz_id = learn_blockchain_service._generate_quiz_id(wallet_address)
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    
+    return loop.run_until_complete(
+        learn_blockchain_service.disburse_quiz_reward(wallet_address, amount, quiz_id)
+    )
