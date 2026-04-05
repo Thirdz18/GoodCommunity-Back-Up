@@ -874,12 +874,397 @@
     </style>
 </head>
 <body>
+
+<!-- ══════════════════════════════════════════════════════
+     PDF GUIDE OVERLAY
+     ══════════════════════════════════════════════════════ -->
+<div id="pdf-guide-overlay" style="
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(7, 5, 25, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0;
+">
+    <!-- Top bar -->
+    <div style="
+        width: 100%;
+        background: linear-gradient(135deg, #7c3aed, #4f46e5);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        flex-shrink: 0;
+        box-sizing: border-box;
+    ">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.4rem;">📖</span>
+            <div>
+                <div style="color: #fff; font-weight: 800; font-size: 1rem; line-height: 1.2;">GoodMarket Learn &amp; Earn — Feature Guide</div>
+                <div style="color: #c4b5fd; font-size: 0.75rem;">Read the guide below, then close to start your quiz</div>
+            </div>
+        </div>
+        <button onclick="closeGuide()" style="
+            background: rgba(255,255,255,0.15);
+            border: 2px solid rgba(255,255,255,0.4);
+            color: #fff;
+            padding: 9px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        " onmouseover="this.style.background='rgba(255,255,255,0.28)'"
+           onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+            ✕ &nbsp;Close Guide — Take Me to the Quiz
+        </button>
+    </div>
+
+    <!-- HTML Guide Content (replaces PDF iframe — works on all browsers) -->
+    <div style="width:100%;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:linear-gradient(135deg,#0f0a2e 0%,#1a0f3c 100%);padding:24px 16px 40px;box-sizing:border-box;">
+        <div style="max-width:720px;margin:0 auto;">
+
+            <!-- TOC -->
+            <div style="background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.3);border-radius:14px;padding:18px 20px;margin-bottom:28px;">
+                <div style="color:#c4b5fd;font-weight:800;font-size:0.95rem;margin-bottom:12px;">📋 Table of Contents</div>
+                <div style="display:flex;flex-direction:column;gap:6px;font-size:0.85rem;">
+                    <span style="color:#a78bfa;">1. What Changed — Old Feature vs New Feature</span>
+                    <span style="color:#a78bfa;">2. How to Take a Quiz</span>
+                    <span style="color:#a78bfa;">3. Achievement Card &amp; NFT Minting</span>
+                    <span style="color:#a78bfa;">4. Mint Eligibility Rules</span>
+                    <span style="color:#a78bfa;">5. NFT Marketplace — How to Sell &amp; Buy</span>
+                    <span style="color:#a78bfa;">6. How to Burn an NFT</span>
+                    <span style="color:#a78bfa;">7. Transaction History</span>
+                    <span style="color:#a78bfa;">8. Quick Reference Summary</span>
+                </div>
+            </div>
+
+            <!-- Section 1 -->
+            <div style="margin-bottom:32px;">
+                <div style="color:#f59e0b;font-weight:900;font-size:1.1rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                    <span style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:4px 10px;font-size:0.8rem;">1</span>
+                    What Changed — Old vs New
+                </div>
+                <p style="color:rgba(255,255,255,0.75);font-size:0.88rem;line-height:1.7;margin:0 0 14px;">GoodMarket Learn &amp; Earn has undergone a major update. Instead of receiving instant G$ rewards, you now earn an <strong style="color:#c4b5fd;">Achievement NFT</strong> that can be sold or burned to get G$ tokens.</p>
+                <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:10px;padding:12px 14px;font-size:0.82rem;color:#a5b4fc;font-weight:600;margin-bottom:14px;text-align:center;letter-spacing:0.5px;">
+                    Take Quiz &nbsp;→&nbsp; Achievement Card &nbsp;→&nbsp; Mint as NFT &nbsp;→&nbsp; Sell or Burn for G$
+                </div>
+                <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+                <table style="width:100%;border-collapse:collapse;font-size:0.82rem;min-width:480px;">
+                    <thead><tr style="background:rgba(124,58,237,0.2);">
+                        <th style="padding:9px 10px;color:#c4b5fd;font-weight:700;border-bottom:1px solid rgba(124,58,237,0.3);text-align:left;"></th>
+                        <th style="padding:9px 10px;color:#fca5a5;font-weight:700;border-bottom:1px solid rgba(124,58,237,0.3);text-align:left;">❌ Before (Old)</th>
+                        <th style="padding:9px 10px;color:#86efac;font-weight:700;border-bottom:1px solid rgba(124,58,237,0.3);text-align:left;">✅ Now (New)</th>
+                    </tr></thead>
+                    <tbody>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                            <td style="padding:8px 10px;color:#94a3b8;font-weight:600;">After Quiz</td>
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.65);">Instant G$ reward</td>
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.65);">Achievement Card only</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                            <td style="padding:8px 10px;color:#94a3b8;font-weight:600;">Card Action</td>
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.65);">"Sell This Card" button</td>
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.65);">Mint as NFT on Celo</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                            <td style="padding:8px 10px;color:#94a3b8;font-weight:600;">NFT</td>
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.65);">No NFT</td>
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.65);">Full NFT on Celo blockchain</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                            <td style="padding:8px 10px;color:#94a3b8;font-weight:600;">Earning G$</td>
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.65);">Sent directly &amp; immediately</td>
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.65);">Sell or burn your NFT</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px 10px;color:#94a3b8;font-weight:600;">Eligibility</td>
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.65);">All quizzes eligible</td>
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.65);">Feb 11, 2026 onwards only</td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+            <!-- Section 2 -->
+            <div style="margin-bottom:32px;">
+                <div style="color:#f59e0b;font-weight:900;font-size:1.1rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                    <span style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:4px 10px;font-size:0.8rem;">2</span>
+                    How to Take a Quiz
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                    <div style="display:flex;gap:12px;align-items:flex-start;"><span style="background:#7c3aed;color:#fff;font-weight:800;font-size:0.75rem;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</span><span style="color:rgba(255,255,255,0.8);font-size:0.88rem;">Connect your GoodDollar wallet by clicking <strong style="color:#c4b5fd;">"Connect GoodDollar Wallet"</strong></span></div>
+                    <div style="display:flex;gap:12px;align-items:flex-start;"><span style="background:#7c3aed;color:#fff;font-weight:800;font-size:0.75rem;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</span><span style="color:rgba(255,255,255,0.8);font-size:0.88rem;">Navigate to the <strong style="color:#c4b5fd;">Learn &amp; Earn</strong> page</span></div>
+                    <div style="display:flex;gap:12px;align-items:flex-start;"><span style="background:#7c3aed;color:#fff;font-weight:800;font-size:0.75rem;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</span><span style="color:rgba(255,255,255,0.8);font-size:0.88rem;">Click the <strong style="color:#c4b5fd;">"Start Quiz"</strong> button</span></div>
+                    <div style="display:flex;gap:12px;align-items:flex-start;"><span style="background:#7c3aed;color:#fff;font-weight:800;font-size:0.75rem;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">4</span><span style="color:rgba(255,255,255,0.8);font-size:0.88rem;">Answer each question — you have <strong style="color:#f59e0b;">20 seconds per question</strong></span></div>
+                    <div style="display:flex;gap:12px;align-items:flex-start;"><span style="background:#7c3aed;color:#fff;font-weight:800;font-size:0.75rem;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">5</span><span style="color:rgba(255,255,255,0.8);font-size:0.88rem;">Submit your answers — your <strong style="color:#c4b5fd;">Achievement Card</strong> will appear</span></div>
+                </div>
+                <div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:11px 14px;margin-top:14px;font-size:0.83rem;color:#fde68a;">
+                    ⚠️ <strong>Important:</strong> You must connect your wallet first. Only <strong>one quiz every 120 hours (5 days)</strong> is allowed per wallet.
+                </div>
+            </div>
+
+            <!-- Section 3 -->
+            <div style="margin-bottom:32px;">
+                <div style="color:#f59e0b;font-weight:900;font-size:1.1rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                    <span style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:4px 10px;font-size:0.8rem;">3</span>
+                    Achievement Card &amp; NFT Minting
+                </div>
+                <p style="color:rgba(255,255,255,0.75);font-size:0.88rem;line-height:1.7;margin:0 0 14px;">After completing a quiz, your <strong style="color:#c4b5fd;">Achievement Card</strong> appears automatically showing your score and available actions.</p>
+                <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+                    <div style="display:flex;gap:12px;align-items:flex-start;"><span style="background:#7c3aed;color:#fff;font-weight:800;font-size:0.75rem;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</span><span style="color:rgba(255,255,255,0.8);font-size:0.88rem;">Click the <strong style="color:#c4b5fd;">"🎨 Mint as NFT"</strong> button on your Achievement Card</span></div>
+                    <div style="display:flex;gap:12px;align-items:flex-start;"><span style="background:#7c3aed;color:#fff;font-weight:800;font-size:0.75rem;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</span><span style="color:rgba(255,255,255,0.8);font-size:0.88rem;">Wait for minting — <strong style="color:#86efac;">the app pays the gas fee for you</strong></span></div>
+                    <div style="display:flex;gap:12px;align-items:flex-start;"><span style="background:#7c3aed;color:#fff;font-weight:800;font-size:0.75rem;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</span><span style="color:rgba(255,255,255,0.8);font-size:0.88rem;">You will see <strong style="color:#86efac;">"✅ NFT #[number] Minted!"</strong> confirmation</span></div>
+                    <div style="display:flex;gap:12px;align-items:flex-start;"><span style="background:#7c3aed;color:#fff;font-weight:800;font-size:0.75rem;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">4</span><span style="color:rgba(255,255,255,0.8);font-size:0.88rem;">Your NFT appears in the <strong style="color:#c4b5fd;">"My NFTs"</strong> tab</span></div>
+                </div>
+                <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:10px;padding:11px 14px;font-size:0.83rem;color:#86efac;">
+                    ⛽ <strong>Gas fees are FREE</strong> — GoodMarket covers all minting costs on your behalf.
+                </div>
+            </div>
+
+            <!-- Section 4 -->
+            <div style="margin-bottom:32px;">
+                <div style="color:#f59e0b;font-weight:900;font-size:1.1rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                    <span style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:4px 10px;font-size:0.8rem;">4</span>
+                    Mint Eligibility Rules
+                </div>
+                <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:14px;">
+                <table style="width:100%;border-collapse:collapse;font-size:0.82rem;min-width:420px;">
+                    <thead><tr style="background:rgba(124,58,237,0.2);">
+                        <th style="padding:9px 10px;color:#c4b5fd;font-weight:700;border-bottom:1px solid rgba(124,58,237,0.3);text-align:left;">Quiz Date</th>
+                        <th style="padding:9px 10px;color:#c4b5fd;font-weight:700;border-bottom:1px solid rgba(124,58,237,0.3);text-align:left;">Status</th>
+                        <th style="padding:9px 10px;color:#c4b5fd;font-weight:700;border-bottom:1px solid rgba(124,58,237,0.3);text-align:left;">Button</th>
+                    </tr></thead>
+                    <tbody>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.7);">All of 2025</td>
+                            <td style="padding:8px 10px;color:#fca5a5;font-weight:700;">🚫 NOT ELIGIBLE</td>
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.5);font-size:0.78rem;">"🚫 Not Eligible (Before Feb 11, 2026)"</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.7);">Jan 1 – Feb 10, 2026</td>
+                            <td style="padding:8px 10px;color:#fca5a5;font-weight:700;">🚫 NOT ELIGIBLE</td>
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.5);font-size:0.78rem;">"🚫 Not Eligible (Before Feb 11, 2026)"</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(34,197,94,0.05);">
+                            <td style="padding:8px 10px;color:#86efac;font-weight:700;">Feb 11, 2026 onwards ✅</td>
+                            <td style="padding:8px 10px;color:#86efac;font-weight:700;">✅ ELIGIBLE</td>
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.7);font-size:0.78rem;">"🎨 Mint as NFT" — purple button</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.7);">Already minted</td>
+                            <td style="padding:8px 10px;color:#93c5fd;font-weight:700;">✅ DONE</td>
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.5);font-size:0.78rem;">"✅ Already Minted #[token]"</td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div>
+                <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:10px;padding:11px 14px;font-size:0.83rem;color:#a5b4fc;">
+                    💡 The <strong>Feb 11, 2026</strong> cutoff prevents mass minting from old cards and ensures marketplace fairness.
+                </div>
+            </div>
+
+            <!-- Section 5 -->
+            <div style="margin-bottom:32px;">
+                <div style="color:#f59e0b;font-weight:900;font-size:1.1rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                    <span style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:4px 10px;font-size:0.8rem;">5</span>
+                    NFT Marketplace — Sell &amp; Buy
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+                    <div style="background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.25);border-radius:12px;padding:14px;">
+                        <div style="color:#c4b5fd;font-weight:800;font-size:0.85rem;margin-bottom:10px;">🏷️ For Sellers</div>
+                        <div style="display:flex;flex-direction:column;gap:7px;font-size:0.81rem;color:rgba(255,255,255,0.75);">
+                            <span>1. Go to <strong style="color:#c4b5fd;">My NFTs</strong> tab</span>
+                            <span>2. Click <strong style="color:#c4b5fd;">"List for Sale"</strong></span>
+                            <span>3. Confirm the price</span>
+                            <span>4. NFT appears in marketplace</span>
+                            <span>5. Receive G$ when sold ✅</span>
+                        </div>
+                    </div>
+                    <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:14px;">
+                        <div style="color:#86efac;font-weight:800;font-size:0.85rem;margin-bottom:10px;">💰 For Buyers</div>
+                        <div style="display:flex;flex-direction:column;gap:7px;font-size:0.81rem;color:rgba(255,255,255,0.75);">
+                            <span>1. Go to <strong style="color:#86efac;">NFT Marketplace</strong> tab</span>
+                            <span>2. Click <strong style="color:#86efac;">"Buy NFT"</strong></span>
+                            <span>3. Approve G$ in wallet</span>
+                            <span>4. NFT is yours ✅</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:10px;padding:11px 14px;font-size:0.83rem;color:#a5b4fc;">
+                    💡 Price formula: <strong>(score ÷ total questions) × 1,000 G$</strong> — you can delist anytime before sale.
+                </div>
+            </div>
+
+            <!-- Section 6 -->
+            <div style="margin-bottom:32px;">
+                <div style="color:#f59e0b;font-weight:900;font-size:1.1rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                    <span style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:4px 10px;font-size:0.8rem;">6</span>
+                    How to Burn an NFT
+                </div>
+                <p style="color:rgba(255,255,255,0.75);font-size:0.88rem;line-height:1.7;margin:0 0 12px;">Burning permanently destroys an NFT in exchange for a <strong style="color:#f59e0b;">G$ reward</strong> based on your quiz score.</p>
+                <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:14px;margin-bottom:14px;text-align:center;">
+                    <div style="color:#fde68a;font-weight:800;font-size:0.9rem;margin-bottom:8px;">🔥 Burn Reward Formula</div>
+                    <div style="color:#f59e0b;font-size:1.1rem;font-weight:900;">(score ÷ total questions) × 1,000 G$</div>
+                    <div style="display:flex;justify-content:center;gap:16px;margin-top:12px;flex-wrap:wrap;font-size:0.8rem;">
+                        <span style="color:#86efac;">10/10 = <strong>1,000 G$</strong></span>
+                        <span style="color:#86efac;">9/10 = <strong>900 G$</strong></span>
+                        <span style="color:#86efac;">8/10 = <strong>800 G$</strong></span>
+                        <span style="color:#86efac;">7/10 = <strong>700 G$</strong></span>
+                        <span style="color:#86efac;">5/10 = <strong>500 G$</strong></span>
+                    </div>
+                </div>
+                <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:11px 14px;font-size:0.83rem;color:#fca5a5;">
+                    ⚠️ <strong>Burning is permanent</strong> — the NFT cannot be recovered. Delist from marketplace first before burning.
+                </div>
+            </div>
+
+            <!-- Section 7 -->
+            <div style="margin-bottom:32px;">
+                <div style="color:#f59e0b;font-weight:900;font-size:1.1rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                    <span style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:4px 10px;font-size:0.8rem;">7</span>
+                    Transaction History
+                </div>
+                <p style="color:rgba(255,255,255,0.75);font-size:0.88rem;line-height:1.7;margin:0 0 12px;">The <strong style="color:#c4b5fd;">"📜 Tx History"</strong> tab shows all your NFT transactions — sales and burns — with verifiable CeloScan links.</p>
+                <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+                <table style="width:100%;border-collapse:collapse;font-size:0.82rem;min-width:380px;">
+                    <thead><tr style="background:rgba(124,58,237,0.2);">
+                        <th style="padding:9px 10px;color:#c4b5fd;font-weight:700;border-bottom:1px solid rgba(124,58,237,0.3);text-align:left;">Section</th>
+                        <th style="padding:9px 10px;color:#c4b5fd;font-weight:700;border-bottom:1px solid rgba(124,58,237,0.3);text-align:left;">Contents</th>
+                    </tr></thead>
+                    <tbody>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                            <td style="padding:8px 10px;color:#fde68a;font-weight:700;">💰 NFT Sales</td>
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.7);">Token #, Quiz, Price, Seller, Buyer, TX hash, Date</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px 10px;color:#fca5a5;font-weight:700;">🔥 Burn History</td>
+                            <td style="padding:8px 10px;color:rgba(255,255,255,0.7);">Token #, Quiz, Score, G$ Reward, Burn TX, Date</td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+            <!-- Section 8 -->
+            <div style="margin-bottom:32px;">
+                <div style="color:#f59e0b;font-weight:900;font-size:1.1rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                    <span style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:4px 10px;font-size:0.8rem;">8</span>
+                    Quick Reference Summary
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
+                    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                        <span style="color:#c4b5fd;font-weight:700;font-size:0.85rem;">🎓 Take Quiz</span><span style="color:rgba(255,255,255,0.6);font-size:0.82rem;">Achievement Card + record saved</span>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                        <span style="color:#c4b5fd;font-weight:700;font-size:0.85rem;">🎨 Mint NFT</span><span style="color:rgba(255,255,255,0.6);font-size:0.82rem;">NFT minted on Celo (app pays gas)</span>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                        <span style="color:#c4b5fd;font-weight:700;font-size:0.85rem;">🏷️ List for Sale</span><span style="color:rgba(255,255,255,0.6);font-size:0.82rem;">NFT appears in marketplace</span>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                        <span style="color:#c4b5fd;font-weight:700;font-size:0.85rem;">💰 Sell / Buy</span><span style="color:rgba(255,255,255,0.6);font-size:0.82rem;">G$ to seller, NFT to buyer</span>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                        <span style="color:#f59e0b;font-weight:700;font-size:0.85rem;">🔥 Burn NFT</span><span style="color:rgba(255,255,255,0.6);font-size:0.82rem;">NFT destroyed → G$ reward received</span>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                        <span style="color:#94a3b8;font-weight:700;font-size:0.85rem;">📜 Tx History</span><span style="color:rgba(255,255,255,0.6);font-size:0.82rem;">All sale and burn records with CeloScan links</span>
+                    </div>
+                </div>
+                <div style="background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);border-radius:12px;padding:14px;">
+                    <div style="color:#c4b5fd;font-weight:800;font-size:0.85rem;margin-bottom:10px;">📅 Key Numbers</div>
+                    <div style="display:flex;flex-direction:column;gap:7px;font-size:0.83rem;">
+                        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;"><span style="color:#94a3b8;">NFT Mint Cutoff</span><span style="color:#fde68a;font-weight:600;">Feb 11, 2026 and later only</span></div>
+                        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;"><span style="color:#94a3b8;">Quiz Cooldown</span><span style="color:#fde68a;font-weight:600;">120 hours (5 days)</span></div>
+                        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;"><span style="color:#94a3b8;">Max Burn Reward</span><span style="color:#fde68a;font-weight:600;">1,000 G$ (perfect score)</span></div>
+                        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;"><span style="color:#94a3b8;">Gas Fee</span><span style="color:#86efac;font-weight:600;">FREE — app pays for you</span></div>
+                        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;"><span style="color:#94a3b8;">Blockchain</span><span style="color:#fde68a;font-weight:600;">Celo Mainnet</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="text-align:center;color:rgba(255,255,255,0.3);font-size:0.78rem;padding-top:8px;line-height:1.6;">
+                GoodMarket is built by Community Moderators — not an official product of the GoodDollar Foundation.<br>
+                For questions, contact us on Telegram or Twitter/X.
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        var GUIDE_KEY = 'gm_guide_seen_v2';
+        var seen = localStorage.getItem(GUIDE_KEY);
+        var overlay = document.getElementById('pdf-guide-overlay');
+        if (!seen) {
+            overlay.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+    })();
+
+    function closeGuide() {
+        localStorage.setItem('gm_guide_seen_v2', '1');
+        var overlay = document.getElementById('pdf-guide-overlay');
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.35s ease';
+        setTimeout(function() {
+            overlay.style.display = 'none';
+            overlay.style.opacity = '';
+            document.body.style.overflow = '';
+        }, 350);
+    }
+
+    function openGuide() {
+        var overlay = document.getElementById('pdf-guide-overlay');
+        overlay.style.opacity = '0';
+        overlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        requestAnimationFrame(function() {
+            overlay.style.transition = 'opacity 0.3s ease';
+            overlay.style.opacity = '1';
+        });
+    }
+</script>
+
     <div class="container">
         <a href="/overview" class="back-btn">← Back to Overview</a>
 
         <div class="header">
             <h1><i class="fas fa-graduation-cap"></i> Learn & Earn</h1>
             <p>Complete quizzes about GoodDollar and earn G$ rewards!</p>
+            <button onclick="openGuide()" style="
+                margin-top: 12px;
+                background: linear-gradient(135deg, #7c3aed22, #4f46e522);
+                border: 1.5px solid #7c3aed88;
+                color: #c4b5fd;
+                padding: 8px 18px;
+                border-radius: 20px;
+                font-size: 0.82rem;
+                font-weight: 600;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s;
+            " onmouseover="this.style.background='linear-gradient(135deg,#7c3aed44,#4f46e544)';this.style.color='#fff'"
+               onmouseout="this.style.background='linear-gradient(135deg,#7c3aed22,#4f46e522)';this.style.color='#c4b5fd'">
+                📖 View Feature Guide
+            </button>
         </div>
 
         <div class="quiz-info">
@@ -1038,9 +1423,10 @@
             </div>
 
             <!-- Tabs -->
-            <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 0;">
+            <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 0; flex-wrap: wrap;">
                 <button id="tab-market" onclick="window.switchNFTTab('market')" style="padding: 10px 20px; background: linear-gradient(135deg,#7c3aed,#4f46e5); color: white; border: none; border-radius: 10px 10px 0 0; font-weight: 700; cursor: pointer; font-size: 0.9rem;">🏪 Marketplace</button>
                 <button id="tab-mynfts" onclick="window.switchNFTTab('mynfts')" style="padding: 10px 20px; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); border: none; border-radius: 10px 10px 0 0; font-weight: 600; cursor: pointer; font-size: 0.9rem;">👤 My NFTs</button>
+                <button id="tab-history" onclick="window.switchNFTTab('history')" style="padding: 10px 20px; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); border: none; border-radius: 10px 10px 0 0; font-weight: 600; cursor: pointer; font-size: 0.9rem;">📜 Tx History</button>
             </div>
 
             <!-- Marketplace Tab -->
@@ -1071,16 +1457,143 @@
                 <div id="nft-mynfts-grid" style="display: none; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px;"></div>
             </div>
 
+            <!-- Transaction History Tab -->
+            <div id="nft-tab-history" style="display: none;">
+                <div id="nft-history-loading" style="text-align: center; padding: 40px; color: rgba(255,255,255,0.6);">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">⏳</div>
+                    <div>Loading transaction history...</div>
+                </div>
+                <div id="nft-history-empty" style="display: none; text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">
+                    <div style="font-size: 3rem; margin-bottom: 12px;">📜</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 8px;">No Transactions Yet</div>
+                    <div style="font-size: 0.9rem;">NFT sale transactions will appear here.</div>
+                </div>
+                <div id="nft-history-list" style="display: none; overflow-x: auto;"></div>
+            </div>
+
             <!-- List for Sale Modal -->
             <div id="nft-list-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 10001; display: none; align-items: center; justify-content: center;">
                 <div style="background: linear-gradient(135deg, #1e1b4b, #312e81); border: 2px solid rgba(139,92,246,0.6); border-radius: 20px; padding: 32px; max-width: 420px; width: 90%;">
                     <h3 style="color: white; margin: 0 0 8px; font-size: 1.4rem;">🏷️ List NFT for Sale</h3>
                     <p id="nft-list-modal-desc" style="color: rgba(255,255,255,0.65); margin: 0 0 20px; font-size: 0.9rem;"></p>
                     <label style="color: rgba(255,255,255,0.8); font-weight: 600; font-size: 0.9rem; display: block; margin-bottom: 8px;">Set Price (G$)</label>
-                    <input id="nft-list-price-input" type="number" min="1" max="10000" step="1" placeholder="e.g. 100" style="width: 100%; padding: 12px 16px; border-radius: 10px; border: 2px solid rgba(139,92,246,0.5); background: rgba(255,255,255,0.08); color: white; font-size: 1rem; box-sizing: border-box; margin-bottom: 20px;">
+                    <div id="nft-list-price-hint" style="color: rgba(167,139,250,0.85); font-size: 0.82rem; margin-bottom: 8px;"></div>
+                    <input id="nft-list-price-input" type="number" min="1" max="1000" step="1" placeholder="e.g. 500" style="width: 100%; padding: 12px 16px; border-radius: 10px; border: 2px solid rgba(139,92,246,0.5); background: rgba(255,255,255,0.08); color: white; font-size: 1rem; box-sizing: border-box; margin-bottom: 6px;">
+                    <div style="color: rgba(255,255,255,0.4); font-size: 0.78rem; margin-bottom: 14px;">Maximum: 1,000 G$ • Min based on your score</div>
                     <div style="display: flex; gap: 10px;">
                         <button id="nft-list-confirm-btn" onclick="window.confirmListNFT()" style="flex: 1; padding: 12px; background: linear-gradient(135deg,#7c3aed,#4f46e5); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer;">List for Sale</button>
                         <button onclick="window.closeListModal()" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; font-weight: 600; cursor: pointer;">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Burn NFT Modal -->
+            <div id="nft-burn-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 10003; align-items: center; justify-content: center;">
+                <div style="background: linear-gradient(135deg, #2d1010, #450a0a); border: 2px solid rgba(239,68,68,0.6); border-radius: 20px; padding: 32px; max-width: 420px; width: 90%;">
+                    <div style="text-align:center; margin-bottom: 16px;">
+                        <div style="font-size: 3rem; margin-bottom: 8px;">🔥</div>
+                        <h3 style="color: white; margin: 0 0 6px; font-size: 1.35rem;">Burn this NFT?</h3>
+                        <p id="nft-burn-modal-desc" style="color: rgba(255,255,255,0.65); margin: 0 0 0; font-size: 0.88rem;"></p>
+                    </div>
+                    <div style="background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); border-radius: 12px; padding: 16px; margin-bottom: 18px; text-align: center;">
+                        <div id="nft-burn-reward-display" style="font-size: 2rem; font-weight: 900; color: #fca5a5;"></div>
+                        <div style="color: rgba(255,255,255,0.55); font-size: 0.78rem; margin-top: 4px;">G$ to be sent to your wallet</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 14px; margin-bottom: 20px;">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.82rem; line-height: 1.8;">
+                            <div>🔥 NFT will be permanently destroyed</div>
+                            <div>💰 G$ reward sent to your wallet instantly</div>
+                            <div style="color: rgba(239,68,68,0.85); margin-top: 6px; font-weight: 700;">⚠️ This action cannot be undone!</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="nft-burn-confirm-btn" onclick="window.confirmBurnNFT()" style="flex: 1; padding: 12px; background: linear-gradient(135deg,#dc2626,#b91c1c); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer;">🔥 Burn & Claim</button>
+                        <button onclick="window.closeBurnModal()" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; font-weight: 600; cursor: pointer;">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buy NFT Modal -->
+            <div id="nft-buy-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10002; align-items: center; justify-content: center;">
+                <div style="background: linear-gradient(135deg, #1e1b4b, #312e81); border: 2px solid rgba(245,158,11,0.6); border-radius: 20px; padding: 32px; max-width: 420px; width: 90%;">
+                    <!-- Step: Confirm -->
+                    <div id="nft-buy-step-confirm">
+                        <h3 style="color: white; margin: 0 0 6px; font-size: 1.4rem;">💎 Buy NFT</h3>
+                        <p id="nft-buy-modal-desc" style="color: rgba(255,255,255,0.65); margin: 0 0 20px; font-size: 0.9rem;"></p>
+                        <div style="background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35); border-radius: 12px; padding: 16px; margin-bottom: 20px; text-align: center;">
+                            <div id="nft-buy-price-display" style="font-size: 2rem; font-weight: 900; color: #f59e0b;"></div>
+                            <div style="color: rgba(255,255,255,0.6); font-size: 0.8rem; margin-top: 4px;">Purchase Price</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 14px; margin-bottom: 20px;">
+                            <div style="color: rgba(255,255,255,0.75); font-size: 0.82rem; line-height: 1.7;">
+                                <div>✅ <strong>Step 1:</strong> Send G$ to seller — sign in your wallet</div>
+                                <div>✅ <strong>Step 2:</strong> App verifies payment &amp; transfers NFT to you</div>
+                                <div style="margin-top: 8px; color: rgba(255,255,255,0.45); font-size: 0.78rem;">App pays all blockchain gas fees for you.</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="nft-buy-confirm-btn" onclick="window.executeBuyNFT()" style="flex: 1; padding: 13px; background: linear-gradient(135deg,#f59e0b,#d97706); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.95rem;">Send G$ &amp; Buy</button>
+                            <button onclick="window.closeBuyModal()" style="flex: 1; padding: 13px; background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 10px; font-weight: 600; cursor: pointer;">Cancel</button>
+                        </div>
+                    </div>
+                    <!-- Step: WalletConnect QR (regular browser) -->
+                    <div id="nft-buy-step-wc" style="display: none; text-align: center;">
+                        <h3 style="color: white; margin: 0 0 4px; font-size: 1.2rem;">🔗 Connect Your Wallet</h3>
+                        <p style="color: rgba(255,255,255,0.55); font-size: 0.8rem; margin: 0 0 16px;">Scan with MetaMask, Trust Wallet, or any WalletConnect wallet</p>
+                        <!-- Alert box -->
+                        <div id="nft-buy-wc-alert" style="display:none; border-radius:10px; padding:0.7rem 0.9rem; font-size:0.82rem; font-weight:500; text-align:left; margin-bottom:12px;"></div>
+                        <!-- Loading -->
+                        <div id="nft-buy-wc-loading" style="padding: 30px 0; color: rgba(255,255,255,0.6); font-size:0.9rem;">
+                            <div style="font-size:2rem; margin-bottom:10px;">⏳</div>
+                            Generating QR code…
+                        </div>
+                        <!-- QR Box -->
+                        <div id="nft-buy-wc-qrbox" style="display:none;">
+                            <div style="background: white; border-radius: 14px; padding: 14px; display: inline-block; margin-bottom: 14px;">
+                                <div id="nft-buy-wc-canvas"></div>
+                            </div>
+                            <div style="color: rgba(255,255,255,0.5); font-size: 0.78rem; margin-bottom: 16px;">Waiting for wallet connection…</div>
+                        </div>
+                        <!-- Connected — sending TX -->
+                        <div id="nft-buy-wc-sending" style="display:none; padding: 20px 0;">
+                            <div style="font-size:2rem; margin-bottom:10px;">📲</div>
+                            <div style="color: #86efac; font-weight: 700; margin-bottom: 6px;">Wallet Connected!</div>
+                            <div id="nft-buy-wc-sending-msg" style="color: rgba(255,255,255,0.6); font-size:0.85rem;">Preparing transaction…</div>
+                        </div>
+                        <button onclick="window.closeBuyModal()" style="margin-top:8px; padding: 10px 24px; background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.85rem;">Cancel</button>
+                    </div>
+                    <!-- Step: Processing -->
+                    <div id="nft-buy-step-processing" style="display: none; text-align: center;">
+                        <div style="font-size: 2.5rem; margin-bottom: 12px;">⏳</div>
+                        <h3 style="color: white; margin: 0 0 8px; font-size: 1.2rem;" id="nft-buy-processing-title">Processing…</h3>
+                        <p id="nft-buy-processing-msg" style="color: rgba(255,255,255,0.6); font-size: 0.88rem; margin: 0 0 20px;"></p>
+                        <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 14px;">
+                            <div id="nft-buy-step1-row" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; color: rgba(255,255,255,0.7); font-size: 0.85rem;">
+                                <span id="nft-buy-step1-icon" style="font-size: 1.1rem;">⏳</span>
+                                <span>Step 1: Send G$ to seller — sign in your wallet</span>
+                            </div>
+                            <div id="nft-buy-step2-row" style="display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.4); font-size: 0.85rem;">
+                                <span id="nft-buy-step2-icon" style="font-size: 1.1rem;">⭕</span>
+                                <span>Step 2: App verifies payment &amp; transfers NFT</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Step: Done -->
+                    <div id="nft-buy-step-done" style="display: none; text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 12px;">🎉</div>
+                        <h3 style="color: white; margin: 0 0 8px; font-size: 1.3rem;">Purchase Complete!</h3>
+                        <p id="nft-buy-done-msg" style="color: rgba(255,255,255,0.65); font-size: 0.88rem; margin: 0 0 20px;"></p>
+                        <button onclick="window.closeBuyModal()" style="padding: 12px 32px; background: linear-gradient(135deg,#7c3aed,#4f46e5); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer;">Done ✓</button>
+                    </div>
+                    <!-- Step: Error -->
+                    <div id="nft-buy-step-error" style="display: none; text-align: center;">
+                        <div style="font-size: 2.5rem; margin-bottom: 12px;">❌</div>
+                        <h3 style="color: #fca5a5; margin: 0 0 8px; font-size: 1.2rem;">Purchase Failed</h3>
+                        <p id="nft-buy-error-msg" style="color: rgba(255,255,255,0.6); font-size: 0.85rem; margin: 0 0 20px;"></p>
+                        <div style="display: flex; gap: 10px; justify-content: center;">
+                            <button onclick="window.retryBuyNFT()" style="padding: 11px 24px; background: linear-gradient(135deg,#f59e0b,#d97706); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer;">Retry</button>
+                            <button onclick="window.closeBuyModal()" style="padding: 11px 24px; background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 10px; font-weight: 600; cursor: pointer;">Close</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1353,8 +1866,8 @@
                 <div class="stat-value" id="achievement-score">10/10</div>
             </div>
             <div class="stat-item">
-                <div class="stat-label">Earned</div>
-                <div class="stat-value" id="achievement-reward">2000 G$</div>
+                <div class="stat-label">Reward</div>
+                <div class="stat-value" id="achievement-reward">🎨 NFT</div>
             </div>
         </div>
         <div class="achievement-footer">
@@ -1364,9 +1877,6 @@
     </div>
 
     <div class="action-buttons">
-        <button class="btn-share" id="sell-achievement-btn" style="display: none; background: linear-gradient(135deg, #f093fb, #f5576c);">
-            <span>💰 Sell This Card</span>
-        </button>
         <button class="btn-share" id="download-achievement-btn" style="display: none;">
             <span>📥 Download Achievement Card</span>
         </button>
@@ -1689,14 +2199,14 @@
                     console.log('✅ Quiz session started successfully');
                     console.log('📚 Module links received:', moduleLinks);
                     console.log('📚 Module links count:', moduleLinks.length);
-                    
+
                     if (moduleLinks.length > 0) {
                         console.log('📖 First module:', moduleLinks[0]);
                         console.log('📝 Content length:', moduleLinks[0].content ? moduleLinks[0].content.length : 0);
                     }
 
                     displayQuiz();
-                    
+
                     if (moduleLinks.length > 0) {
                         showNotification(`Quiz started! Please read ${moduleLinks.length} module(s) first.`, 'success');
                     } else {
@@ -1782,7 +2292,7 @@
                         ${currentModule.title}
                     </h3>
                     ${currentModule.description ? `<p style="color: rgba(241, 245, 249, 0.8); margin-bottom: 1.5rem; font-style: italic;">${currentModule.description}</p>` : ''}
-                    
+
                     <!-- Reading Timer -->
                     <div id="module-timer" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 20px; border-radius: 12px; margin-bottom: 2rem; text-align: center;">
                         <div style="font-size: 0.9rem; color: rgba(255,255,255,0.9); margin-bottom: 5px;">⏰ Required Reading Time</div>
@@ -1854,7 +2364,7 @@
                 // Timer finished
                 if (moduleTimeRemaining <= 0) {
                     clearInterval(moduleReadingTimer);
-                    
+
                     // Hide content
                     const contentDiv = document.getElementById('module-content');
                     if (contentDiv) {
@@ -1885,7 +2395,7 @@
             if (moduleReadingTimer) {
                 clearInterval(moduleReadingTimer);
             }
-            
+
             currentQuestionIndex = 0;
             displayQuestion();
         };
@@ -2178,49 +2688,22 @@
                 resetBtn.addEventListener('click', resetQuiz);
             }
 
-            // Play clap sound on success
-            if (data.disbursement_success) {
+            // Auto-show achievement card after quiz completes
+            if (data.success) {
                 playClapSound();
-                // Auto-show achievement card after 2 seconds with selling info
-                setTimeout(async () => {
-                    // Fetch selling availability info
-                    try {
-                        const checkResponse = await fetch('/learn-earn/check-card-sold', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                quiz_id: 'current',
-                                score: data.score,
-                                total_questions: data.total_questions,
-                                timestamp: new Date().toISOString()
-                            })
-                        });
-                        const checkData = await checkResponse.json();
-
-                        showAchievementCard(data.score, data.total_questions, data.rewards, {
-                            already_sold: false,
-                            selling_available: checkData.selling_available || false,
-                            available_date: checkData.available_date || 'May 10, 2026',
-                            days_until_available: checkData.days_until_available || 0
-                        });
-                    } catch (error) {
-                        console.error('Error fetching selling info:', error);
-                        // Show card anyway with default selling info
-                        showAchievementCard(data.score, data.total_questions, data.rewards, {
-                            already_sold: false,
-                            selling_available: false,
-                            available_date: 'May 10, 2026',
-                            days_until_available: 0
-                        });
-                    }
-                }, 2000);
+                setTimeout(() => {
+                    showAchievementCard(data.score, data.total_questions, {
+                        quiz_id: data.quiz_id || '',
+                        quiz_name: 'Learn & Earn Quiz',
+                        quiz_timestamp: new Date().toISOString(),
+                        already_minted: false
+                    });
+                }, 1500);
             }
         }
 
-        // Show achievement card in modal - simplified without username and ranking
-        async function showAchievementCard(score, total, reward, soldInfo = {}) {
+        // Show achievement card in modal
+        async function showAchievementCard(score, total, soldInfo = {}) {
             const modal = document.getElementById('achievement-modal');
             modal.style.display = 'flex';
             modal.style.cssText = `
@@ -2239,73 +2722,49 @@
             `;
 
             const percentage = Math.round((score / total) * 100);
-            const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const dateSource = soldInfo && soldInfo.quiz_timestamp ? new Date(soldInfo.quiz_timestamp) : new Date();
+            const today = dateSource.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
             modal.innerHTML = `
-                <div style="background: white; border-radius: 24px; padding: 0; max-width: 520px; position: relative; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                <div style="background: white; border-radius: 24px; padding: 0; max-width: 520px; width:95%; position: relative; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
                     <div id="achievement-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); padding: 40px; color: white; text-align: center; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
-                        <!-- Animated background -->
                         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.25) 0%, transparent 70%); animation: pulse 3s infinite;"></div>
-
-                        <!-- Trophy Icon -->
                         <img src="https://img.icons8.com/fluency/96/trophy.png" alt="Trophy" style="width: 100px; height: 100px; animation: bounce 2s infinite; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));">
                         <h2 style="margin: 0 0 12px 0; font-size: 2.8rem; font-weight: 900; text-shadow: 4px 4px 12px rgba(0,0,0,0.6); position: relative; z-index: 1; letter-spacing: 2px;">Quiz Completed!</h2>
                         <p style="margin: 0 0 25px 0; font-weight: 700; font-size: 1.2rem; position: relative; z-index: 1; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">${today}</p>
 
-                        ${soldInfo && soldInfo.already_sold ? `
-                        <div style="background: rgba(239, 68, 68, 0.2); border: 2px solid rgba(239, 68, 68, 0.5); border-radius: 12px; padding: 10px 20px; margin: 10px 0;">
-                            <span style="font-size: 1.1rem; font-weight: 700;">✅ ALREADY SOLD FOR ${soldInfo.sell_price} G$</span>
-                        </div>
-                        ` : ''}
-
-                        ${soldInfo && !soldInfo.selling_available && !soldInfo.already_sold ? `
-                        <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #fbbf24; border-radius: 12px; padding: 15px 20px; margin: 10px 0;">
-                            <div style="font-size: 1.1rem; font-weight: 700; color: #92400e; margin-bottom: 5px;">
-                                🗓️ SELLING AVAILABLE ON ${soldInfo.available_date}
-                            </div>
-                            <div style="font-size: 0.9rem; color: #92400e;">
-                                ⏰ ${soldInfo.days_until_available} days remaining
-                            </div>
-                        </div>
-                        ` : ''}
-
                         <!-- Score Stats -->
-                        <div style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.2)); border-radius: 20px; padding: 30px; margin: 25px 0; backdrop-filter: blur(15px); border: 3px solid rgba(255,255,255,0.5); position: relative; z-index: 1; box-shadow: 0 8px 25px rgba(0,0,0,0.4);">
+                        <div style="background: linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0.2)); border-radius: 20px; padding: 30px; margin: 25px 0; backdrop-filter: blur(15px); border: 3px solid rgba(255,255,255,0.5); position: relative; z-index: 1; box-shadow: 0 8px 25px rgba(0,0,0,0.4);">
                             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px;">
                                 <div>
-                                    <div style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); text-transform: uppercase; letter-spacing: 1px;">Score</div>
+                                    <div style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); text-transform: uppercase; letter-spacing: 1px;">Score</div>
                                     <div style="font-size: 2.5rem; font-weight: 900; text-shadow: 4px 4px 8px rgba(0,0,0,0.6);">${score}/${total}</div>
                                     <div style="font-size: 1.1rem; font-weight: 700; margin-top: 8px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">${percentage}%</div>
                                 </div>
                                 <div>
-                                    <div style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); text-transform: uppercase; letter-spacing: 1px;">Earned</div>
-                                    <div style="font-size: 2.5rem; font-weight: 900; text-shadow: 4px 4px 8px rgba(0,0,0,0.6); color: #ffd700;">${reward} G$</div>
+                                    <div style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); text-transform: uppercase; letter-spacing: 1px;">Reward</div>
+                                    <div style="font-size: 2rem; font-weight: 900; text-shadow: 4px 4px 8px rgba(0,0,0,0.6);">🎨</div>
+                                    <div style="font-size: 0.95rem; font-weight: 700; margin-top: 6px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Achievement NFT</div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Platform Badge -->
                         <div style="margin-top: 20px; opacity: 0.95; font-size: 1.1rem; font-weight: 600; position: relative; z-index: 1;">
                             <div style="margin-bottom: 5px;">🌟 GoodDollar Learn & Earn</div>
                             <div style="font-size: 0.85rem; opacity: 0.8;">Building Knowledge, Earning Rewards</div>
                         </div>
                     </div>
 
-                    <!-- Share Description -->
+                    <!-- Action Buttons -->
                     <div id="share-description" style="padding: 25px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); text-align: center;">
-                        <p style="margin: 0 0 15px 0; color: #495057; font-size: 1rem; font-weight: 600;">📢 Share Your Achievement!</p>
-                        <p style="margin: 0 0 20px 0; color: #6c757d; font-size: 0.9rem; line-height: 1.6;">
-                            🎓 Just completed a GoodDollar Learn & Earn quiz!\n
-                            💰 Score: ${score}/${total} | Earned: ${reward} G$\n
-                            🚀 Join me in earning crypto while learning!
-                        </p>
+                        <p style="margin: 0 0 15px 0; color: #495057; font-size: 1rem; font-weight: 600;">🎉 Congratulations! Mint your Achievement NFT!</p>
                         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                            <button id="sell-btn-modal" ${soldInfo && soldInfo.already_sold || !soldInfo.selling_available ? 'disabled' : ''} style="padding: 12px 24px; background: ${soldInfo && soldInfo.already_sold || !soldInfo.selling_available ? '#ccc' : 'linear-gradient(135deg, #f59e0b, #d97706)'}; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: ${soldInfo && soldInfo.already_sold || !soldInfo.selling_available ? 'not-allowed' : 'pointer'}; box-shadow: 0 4px 12px rgba(245,158,11,0.3);" title="${!soldInfo.selling_available && !soldInfo.already_sold ? `Available on ${soldInfo.available_date}` : ''}">
-                                ${!soldInfo.selling_available && !soldInfo.already_sold ? '🔒 Locked Until ' + soldInfo.available_date : '💰 Sell This Card'}
-                            </button>
-                            <button id="mint-nft-btn-modal" style="padding: 12px 24px; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(124,58,237,0.4);">
-                                🎨 Mint as NFT
-                            </button>
+                            ${soldInfo && soldInfo.not_eligible
+                                ? `<button id="mint-nft-btn-modal" disabled style="padding: 12px 24px; background: #6b2020; color: #fca5a5; border: none; border-radius: 12px; font-weight: 700; cursor: not-allowed; opacity: 0.85;">🚫 Not Eligible (Before Feb 11, 2026)</button>`
+                                : soldInfo && soldInfo.already_minted
+                                    ? `<button id="mint-nft-btn-modal" disabled style="padding: 12px 24px; background: #4b5563; color: #9ca3af; border: none; border-radius: 12px; font-weight: 700; cursor: not-allowed; opacity: 0.75;">✅ Already Minted${soldInfo.minted_token_id ? ' #' + soldInfo.minted_token_id : ''}</button>`
+                                    : `<button id="mint-nft-btn-modal" style="padding: 12px 24px; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(124,58,237,0.4);">🎨 Mint as NFT</button>`
+                            }
                             <button id="download-btn-modal" style="padding: 12px 24px; background: linear-gradient(135deg, #28a745, #20c997); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(40,167,69,0.3);">
                                 📥 Download Card
                             </button>
@@ -2325,23 +2784,16 @@
 
             // Attach event listeners after modal is rendered
             setTimeout(() => {
-                const sellBtn = document.getElementById('sell-btn-modal');
                 const mintNftBtn = document.getElementById('mint-nft-btn-modal');
                 const downloadBtn = document.getElementById('download-btn-modal');
                 const twitterBtn = document.getElementById('twitter-btn-modal');
                 const telegramBtn = document.getElementById('telegram-btn-modal');
                 const closeBtn = document.getElementById('close-btn-modal');
 
-                if (mintNftBtn) {
+                if (mintNftBtn && !soldInfo.already_minted && !soldInfo.not_eligible) {
                     mintNftBtn.onclick = function(e) {
                         e.preventDefault();
                         window.mintAchievementNFT(soldInfo.quiz_id || '', score, total, soldInfo.quiz_name || 'Learn & Earn Quiz', mintNftBtn);
-                    };
-                }
-                if (sellBtn) {
-                    sellBtn.onclick = function(e) {
-                        e.preventDefault();
-                        window.sellAchievementCard(score, total, reward, soldInfo);
                     };
                 }
                 if (downloadBtn) {
@@ -2353,13 +2805,13 @@
                 if (twitterBtn) {
                     twitterBtn.onclick = function(e) {
                         e.preventDefault();
-                        window.shareToTwitter(score, total, reward);
+                        window.shareToTwitter(score, total, 0);
                     };
                 }
                 if (telegramBtn) {
                     telegramBtn.onclick = function(e) {
                         e.preventDefault();
-                        window.shareToTelegram(score, total, reward);
+                        window.shareToTelegram(score, total, 0);
                     };
                 }
                 if (closeBtn) {
@@ -2472,7 +2924,7 @@
                 if (result.success) {
                     if (result.already_minted) {
                         showNotification(`You already have an NFT for this quiz! Token #${result.token_id}`, 'info');
-                        if (btnEl) { btnEl.textContent = '✅ Already Minted'; }
+                        if (btnEl) { btnEl.disabled = true; btnEl.textContent = '✅ Already Minted'; }
                     } else {
                         showNotification(`🎨 NFT #${result.token_id} minted successfully on Celo! App paid the gas.`, 'success');
                         if (btnEl) { btnEl.textContent = `✅ NFT #${result.token_id} Minted!`; }
@@ -2486,11 +2938,16 @@
                         if (typeof window.loadMyNFTs === 'function') window.loadMyNFTs();
                     }
                 } else {
-                    const msg = result.not_deployed
-                        ? 'NFT contract is not deployed yet. Please contact admin.'
-                        : (result.error || 'Minting failed. Please try again.');
-                    showNotification(msg, 'error');
-                    if (btnEl) { btnEl.disabled = false; btnEl.textContent = '🎨 Mint as NFT'; }
+                    if (result.not_eligible) {
+                        showNotification('🚫 This quiz is not eligible for NFT minting (taken before Feb 11, 2026).', 'error');
+                        if (btnEl) { btnEl.disabled = true; btnEl.textContent = '🚫 Not Eligible'; }
+                    } else {
+                        const msg = result.not_deployed
+                            ? 'NFT contract is not deployed yet. Please contact admin.'
+                            : (result.error || 'Minting failed. Please try again.');
+                        showNotification(msg, 'error');
+                        if (btnEl) { btnEl.disabled = false; btnEl.textContent = '🎨 Mint as NFT'; }
+                    }
                 }
             } catch (err) {
                 console.error('Mint NFT error:', err);
@@ -2499,64 +2956,8 @@
             }
         };
 
-        window.sellAchievementCard = async function(score, total, reward, soldInfo = {}) {
-            try {
-                // Calculate sell price based on score (max 500 G$ for perfect score)
-                const sellPrice = Math.round((score / total) * 500);
-
-                console.log(`💰 sellAchievementCard called: score=${score}/${total}, sellPrice=${sellPrice}, quiz_id=${soldInfo.quiz_id}, selling_available=${soldInfo.selling_available}`);
-
-                // Confirm with user
-                const confirmed = confirm(`Sell this achievement card for ${sellPrice} G$?`);
-                console.log(`💰 User confirmed: ${confirmed}`);
-                if (!confirmed) {
-                    return;
-                }
-
-                showNotification('Processing card sale...', 'info');
-
-                const response = await fetch('/learn-earn/sell-achievement-card', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        quiz_id: soldInfo.quiz_id,
-                        score: score,
-                        total_questions: total,
-                        original_reward: reward,
-                        sell_price: sellPrice,
-                        quiz_timestamp: soldInfo.quiz_timestamp
-                    })
-                });
-
-                const data = await response.json();
-                console.log('💰 Sell response:', data);
-
-                if (data.success) {
-                    window.closeAchievementModal();
-                    alert(`✅ SUCCESS!\n\nAchievement card sold for ${sellPrice} G$!\n\nTransaction Hash:\n${data.transaction_hash || 'Processed'}`);
-                    showNotification(`✅ Achievement card sold for ${sellPrice} G$! Check your wallet.`, 'success');
-                    loadQuizHistory();
-                    loadCardSaleHistory();
-                } else {
-                    if (data.cooldown_active) {
-                        alert(`⏳ SELL COOLDOWN\n\n${data.error}\n\nYou can sell again after the 1-hour cooldown.`);
-                        showNotification(`⏳ Cooldown active — ${data.error}`, 'info');
-                    } else if (!data.selling_available && data.available_date) {
-                        alert(`🗓️ Achievement Card Selling\n\nSelling will be available on ${data.available_date}\n\n⏰ Days until available: ${data.days_until_available}\n\nSave your achievement cards and sell them when the feature becomes available!`);
-                        showNotification(`Achievement card selling will be available on ${data.available_date}`, 'info');
-                    } else {
-                        const errMsg = data.error || 'Failed to sell achievement card';
-                        alert(`❌ SELL FAILED\n\n${errMsg}`);
-                        showNotification(`❌ ${errMsg}`, 'error');
-                    }
-                }
-            } catch (error) {
-                console.error('Error selling achievement card:', error);
-                alert('❌ SELL FAILED\n\nNetwork error. Please try again.');
-                showNotification('❌ Failed to sell achievement card. Please try again.', 'error');
-            }
+        window.sellAchievementCard = function() {
+            showNotification('Card selling has been removed. Mint your NFT instead!', 'info');
         };
 
 
@@ -2670,74 +3071,53 @@
             }
         }
 
-        // Show achievement card from history - make it globally accessible
+        // Show achievement card from history — checks eligibility + mint status first
+        const MINT_ELIGIBLE_FROM = new Date('2026-02-11T00:00:00Z');
+
         window.showHistoryAchievement = async function(quizId) {
             const quiz = quizHistory.find(q => q.quiz_id === quizId);
             if (!quiz) {
                 console.error('Quiz not found:', quizId);
                 return;
             }
-
             const score = quiz.score || 0;
             const total = quiz.total_questions || 0;
-            const reward = quiz['amount_g$'] || 0;
-            const quizTimestamp = quiz.timestamp;
+            const quizTimestamp = quiz.timestamp || null;
 
-            console.log(`🎯 Showing history achievement - Score: ${score}/${total}, Reward: ${reward}, Quiz ID: ${quizId}`);
-
-            // Check if this card was already sold
-            try {
-                const checkResponse = await fetch('/learn-earn/check-card-sold', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        quiz_id: quizId,
-                        score: score,
-                        total_questions: total,
-                        timestamp: quizTimestamp
-                    })
-                });
-
-                const checkData = await checkResponse.json();
-
-                if (checkData.success && checkData.already_sold) {
-                    // Show card with "Already Sold" status
-                    showAchievementCard(score, total, reward, {
-                        already_sold: true,
-                        sell_price: checkData.sell_price,
-                        transaction_hash: checkData.transaction_hash,
-                        sold_at: checkData.sold_at,
-                        quiz_id: quizId,
-                        quiz_timestamp: quizTimestamp,
-                        selling_available: checkData.selling_available,
-                        available_date: checkData.available_date,
-                        days_until_available: checkData.days_until_available
-                    });
-                } else {
-                    // Show normal card with sell option
-                    showAchievementCard(score, total, reward, {
-                        already_sold: false,
-                        quiz_id: quizId,
-                        quiz_timestamp: quizTimestamp,
-                        selling_available: checkData.selling_available,
-                        available_date: checkData.available_date,
-                        days_until_available: checkData.days_until_available
-                    });
-                }
-            } catch (error) {
-                console.error('Error checking sold status:', error);
-                // Show normal card on error - allow selling
-                showAchievementCard(score, total, reward, {
-                    already_sold: false,
+            // Fast local eligibility check (no API call needed for old quizzes)
+            if (quizTimestamp && new Date(quizTimestamp) < MINT_ELIGIBLE_FROM) {
+                showAchievementCard(score, total, {
                     quiz_id: quizId,
+                    quiz_name: quiz.quiz_name || 'Learn & Earn Quiz',
                     quiz_timestamp: quizTimestamp,
-                    selling_available: false,
-                    available_date: 'May 10, 2026',
-                    days_until_available: 0
+                    already_minted: false,
+                    not_eligible: true
                 });
+                return;
             }
+
+            let alreadyMinted = false;
+            let mintedTokenId = null;
+            let notEligible = false;
+            try {
+                const params = new URLSearchParams({ quiz_id: quizId });
+                if (quizTimestamp) params.append('quiz_timestamp', quizTimestamp);
+                const mintCheck = await fetch(`/learn-earn/check-nft-minted?${params}`);
+                const mintData = await mintCheck.json();
+                alreadyMinted = mintData.already_minted || false;
+                mintedTokenId = mintData.token_id || null;
+                notEligible = mintData.not_eligible || false;
+            } catch(e) {
+                console.warn('Could not check mint status:', e);
+            }
+            showAchievementCard(score, total, {
+                quiz_id: quizId,
+                quiz_name: quiz.quiz_name || 'Learn & Earn Quiz',
+                quiz_timestamp: quizTimestamp,
+                already_minted: alreadyMinted,
+                minted_token_id: mintedTokenId,
+                not_eligible: notEligible
+            });
         };
 
 
@@ -2759,10 +3139,55 @@
                 }, 1000); // Match fadeOut duration
             }, timeoutDuration);
         }
+        window.showNotification = showNotification;
 
         // Initialize page
+        // ── Recover interrupted NFT purchase (DApp browser redirect bug) ────────
+        // Trust Wallet / MetaMask mobile may redirect the user away mid-purchase
+        // after the on-chain tx is signed but before the backend call was made.
+        // On every page load we check localStorage for a pending purchase and retry.
+        async function _recoverPendingBuy() {
+            try {
+                const raw = localStorage.getItem('gm_pending_buy');
+                if (!raw) return;
+                const pending = JSON.parse(raw);
+                if (!pending || !pending.txHash || !pending.tokenId) { localStorage.removeItem('gm_pending_buy'); return; }
+                // Ignore if more than 30 minutes old (tx likely too old to verify)
+                if (Date.now() - pending.ts > 30 * 60 * 1000) { localStorage.removeItem('gm_pending_buy'); return; }
+                console.log('🔄 Found pending NFT purchase, recovering...', pending);
+                const resp = await fetch('/learn-earn/nft-buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token_id: pending.tokenId, g_tx_hash: pending.txHash })
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    localStorage.removeItem('gm_pending_buy');
+                    showNotification(`🎉 NFT #${pending.tokenId} purchase completed! Check "My NFTs".`, 'success');
+                    if (typeof window.loadMyNFTs === 'function') setTimeout(window.loadMyNFTs, 1000);
+                    if (typeof window.loadNFTMarketplace === 'function') setTimeout(window.loadNFTMarketplace, 1000);
+                    console.log('✅ Pending buy recovered successfully');
+                } else {
+                    // If the NFT is no longer listed, it was already completed — clean up
+                    const alreadyDone = result.error && (result.error.includes('not listed') || result.error.includes('not found'));
+                    if (alreadyDone) {
+                        localStorage.removeItem('gm_pending_buy');
+                        console.log('ℹ️ Pending buy already completed, cleared localStorage');
+                    } else {
+                        console.warn('⚠️ Pending buy recovery failed:', result.error);
+                    }
+                }
+            } catch (e) {
+                console.warn('⚠️ Pending buy recovery error (will retry next page load):', e);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('🎓 Learn & Earn page loaded - initializing...');
+
+            // Auto-recover any interrupted purchase first
+            _recoverPendingBuy();
+
             await loadQuizSettings();
             checkEligibility();
             loadQuizHistory();
@@ -3210,31 +3635,130 @@
         });
 
         let _pendingListTokenId = null;
+        let _pendingListData = {};
+        let _nftDataMap = {};
 
         window.switchNFTTab = function(tab) {
-            const tabMarket = document.getElementById('nft-tab-market');
-            const tabMyNFTs = document.getElementById('nft-tab-mynfts');
-            const btnMarket = document.getElementById('tab-market');
-            const btnMyNFTs = document.getElementById('tab-mynfts');
-            if (tab === 'market') {
-                tabMarket.style.display = 'block';
-                tabMyNFTs.style.display = 'none';
-                btnMarket.style.background = 'linear-gradient(135deg,#7c3aed,#4f46e5)';
-                btnMarket.style.color = 'white';
-                btnMyNFTs.style.background = 'rgba(255,255,255,0.08)';
-                btnMyNFTs.style.color = 'rgba(255,255,255,0.7)';
-            } else {
-                tabMyNFTs.style.display = 'block';
-                tabMarket.style.display = 'none';
-                btnMyNFTs.style.background = 'linear-gradient(135deg,#7c3aed,#4f46e5)';
-                btnMyNFTs.style.color = 'white';
-                btnMarket.style.background = 'rgba(255,255,255,0.08)';
-                btnMarket.style.color = 'rgba(255,255,255,0.7)';
-                window.loadMyNFTs();
-            }
+            const tabs = ['market', 'mynfts', 'history'];
+            const activeStyle = 'linear-gradient(135deg,#7c3aed,#4f46e5)';
+            const inactiveStyle = 'rgba(255,255,255,0.08)';
+            tabs.forEach(t => {
+                const pane = document.getElementById('nft-tab-' + t);
+                const btn  = document.getElementById('tab-' + t);
+                if (pane) pane.style.display = (t === tab) ? 'block' : 'none';
+                if (btn)  { btn.style.background = (t === tab) ? activeStyle : inactiveStyle; btn.style.color = (t === tab) ? 'white' : 'rgba(255,255,255,0.7)'; }
+            });
+            if (tab === 'mynfts')  window.loadMyNFTs();
+            if (tab === 'history') window.loadNFTHistory();
         };
 
         window.showMyNFTsTab = function() { window.switchNFTTab('mynfts'); };
+
+        window.loadNFTHistory = async function() {
+            const loading = document.getElementById('nft-history-loading');
+            const empty   = document.getElementById('nft-history-empty');
+            const list    = document.getElementById('nft-history-list');
+            if (loading) loading.style.display = 'block';
+            if (empty)   empty.style.display = 'none';
+            if (list)    list.style.display = 'none';
+            try {
+                const [saleResp, burnResp] = await Promise.all([
+                    fetch('/learn-earn/nft-sale-history?limit=50'),
+                    fetch('/learn-earn/nft-burn-history?limit=50')
+                ]);
+                const saleData = await saleResp.json();
+                const burnData = await burnResp.json();
+                if (loading) loading.style.display = 'none';
+
+                const hasSales = saleData.success && saleData.sales && saleData.sales.length > 0;
+                const hasBurns = burnData.success && burnData.burns && burnData.burns.length > 0;
+
+                if (!hasSales && !hasBurns) {
+                    if (empty) empty.style.display = 'block';
+                    return;
+                }
+
+                const celoscan = 'https://celoscan.io/tx/';
+                let html = '';
+
+                if (hasSales) {
+                    const rows = saleData.sales.map(s => {
+                        const seller = s.seller_wallet ? s.seller_wallet.slice(0,6)+'...'+s.seller_wallet.slice(-4) : '—';
+                        const buyer  = s.buyer_wallet  ? s.buyer_wallet.slice(0,6) +'...'+s.buyer_wallet.slice(-4)  : '—';
+                        const date   = s.sold_at ? new Date(s.sold_at).toLocaleString() : '—';
+                        const gTx    = s.g_tx_hash   ? `<a href="${celoscan}${s.g_tx_hash}"   target="_blank" style="color:#a78bfa;font-size:0.8rem;">${s.g_tx_hash.slice(0,10)}…</a>` : '—';
+                        const nftTx  = s.nft_tx_hash ? `<a href="${celoscan}${s.nft_tx_hash}" target="_blank" style="color:#6ee7b7;font-size:0.8rem;">${s.nft_tx_hash.slice(0,10)}…</a>` : '—';
+                        return `<tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+                            <td style="padding:10px 12px;color:#c4b5fd;font-weight:700;">#${s.token_id}</td>
+                            <td style="padding:10px 12px;color:rgba(255,255,255,0.85);font-size:0.85rem;">${s.quiz_name || '—'}</td>
+                            <td style="padding:10px 12px;color:#fcd34d;font-weight:700;">${parseFloat(s.price_g).toFixed(0)} G$</td>
+                            <td style="padding:10px 12px;color:rgba(255,255,255,0.65);font-size:0.82rem;font-family:monospace;">${seller}</td>
+                            <td style="padding:10px 12px;color:rgba(255,255,255,0.65);font-size:0.82rem;font-family:monospace;">${buyer}</td>
+                            <td style="padding:10px 12px;">${gTx}</td>
+                            <td style="padding:10px 12px;">${nftTx}</td>
+                            <td style="padding:10px 12px;color:rgba(255,255,255,0.5);font-size:0.8rem;">${date}</td>
+                        </tr>`;
+                    }).join('');
+                    html += `<div style="margin-bottom:28px;">
+                        <div style="color:rgba(255,255,255,0.6);font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;">💰 NFT Sales</div>
+                        <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;color:white;font-size:0.88rem;">
+                            <thead><tr style="border-bottom:2px solid rgba(139,92,246,0.5);">
+                                <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.5);font-weight:600;">Token</th>
+                                <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.5);font-weight:600;">Quiz</th>
+                                <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.5);font-weight:600;">Price</th>
+                                <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.5);font-weight:600;">Seller</th>
+                                <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.5);font-weight:600;">Buyer</th>
+                                <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.5);font-weight:600;">G$ Tx</th>
+                                <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.5);font-weight:600;">NFT Tx</th>
+                                <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.5);font-weight:600;">Date</th>
+                            </tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table></div>
+                    </div>`;
+                }
+
+                if (hasBurns) {
+                    const burnRows = burnData.burns.map(b => {
+                        const wallet = b.owner_wallet ? b.owner_wallet.slice(0,6)+'...'+b.owner_wallet.slice(-4) : '—';
+                        const date   = b.burned_at ? new Date(b.burned_at).toLocaleString() : '—';
+                        const burnTx = b.burn_tx_hash   ? `<a href="${celoscan}${b.burn_tx_hash}"   target="_blank" style="color:#f87171;font-size:0.8rem;">${b.burn_tx_hash.slice(0,10)}…</a>` : '—';
+                        const rewTx  = b.reward_tx_hash ? `<a href="${celoscan}${b.reward_tx_hash}" target="_blank" style="color:#6ee7b7;font-size:0.8rem;">${b.reward_tx_hash.slice(0,10)}…</a>` : '—';
+                        return `<tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+                            <td style="padding:10px 12px;color:#fca5a5;font-weight:700;">#${b.token_id}</td>
+                            <td style="padding:10px 12px;color:rgba(255,255,255,0.85);font-size:0.85rem;">${b.quiz_name || '—'}</td>
+                            <td style="padding:10px 12px;color:rgba(255,255,255,0.65);font-size:0.82rem;">${b.score || 0}/${b.total || 0}</td>
+                            <td style="padding:10px 12px;color:#fcd34d;font-weight:700;">${parseFloat(b.burn_amount_g || 0).toFixed(0)} G$</td>
+                            <td style="padding:10px 12px;color:rgba(255,255,255,0.65);font-size:0.82rem;font-family:monospace;">${wallet}</td>
+                            <td style="padding:10px 12px;">${burnTx}</td>
+                            <td style="padding:10px 12px;">${rewTx}</td>
+                            <td style="padding:10px 12px;color:rgba(255,255,255,0.5);font-size:0.8rem;">${date}</td>
+                        </tr>`;
+                    }).join('');
+                    html += `<div>
+                        <div style="color:rgba(255,255,255,0.6);font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;">🔥 Burn History</div>
+                        <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;color:white;font-size:0.88rem;">
+                            <thead><tr style="border-bottom:2px solid rgba(239,68,68,0.5);">
+                                <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.5);font-weight:600;">Token</th>
+                                <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.5);font-weight:600;">Quiz</th>
+                                <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.5);font-weight:600;">Score</th>
+                                <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.5);font-weight:600;">Reward</th>
+                                <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.5);font-weight:600;">Wallet</th>
+                                <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.5);font-weight:600;">Burn Tx</th>
+                                <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.5);font-weight:600;">Reward Tx</th>
+                                <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.5);font-weight:600;">Date</th>
+                            </tr></thead>
+                            <tbody>${burnRows}</tbody>
+                        </table></div>
+                    </div>`;
+                }
+
+                list.innerHTML = html;
+                list.style.display = 'block';
+            } catch(e) {
+                if (loading) loading.style.display = 'none';
+                if (empty)   empty.style.display = 'block';
+            }
+        };
 
         window.loadNFTBalance = async function() {
             try {
@@ -3284,7 +3808,7 @@
                                 <div style="font-size: 0.75rem; color: rgba(255,255,255,0.8);">Marketplace Price</div>
                             </div>
                         </div>
-                        <button onclick="window.buyNFT(${nft.token_id}, ${parseFloat(nft.list_price)}, '${nft.quiz_name || ''}')" style="width: 100%; padding: 11px; background: linear-gradient(135deg,#7c3aed,#4f46e5); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">💎 Buy for ${parseFloat(nft.list_price).toFixed(0)} G$</button>
+                        <button onclick="window.buyNFT(${nft.token_id}, ${parseFloat(nft.list_price)}, '${(nft.quiz_name || '').replace(/'/g,'')}', '${nft.owner_wallet || ''}')" style="width: 100%; padding: 11px; background: linear-gradient(135deg,#7c3aed,#4f46e5); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">💎 Buy for ${parseFloat(nft.list_price).toFixed(0)} G$</button>
                         ${nft.contract_address ? `<a href="https://celoscan.io/token/${nft.contract_address}?a=${nft.token_id}" target="_blank" style="display: block; text-align: center; margin-top: 8px; color: rgba(255,255,255,0.4); font-size: 0.75rem; text-decoration: none;">View on Celoscan ↗</a>` : ''}
                     `;
                     grid.appendChild(card);
@@ -3297,25 +3821,32 @@
             }
         };
 
-        window.loadMyNFTs = async function() {
+        window.loadMyNFTs = async function(silent = false) {
             const loading = document.getElementById('nft-mynfts-loading');
             const empty = document.getElementById('nft-mynfts-empty');
             const grid = document.getElementById('nft-mynfts-grid');
             if (!grid) return;
-            if (loading) loading.style.display = 'block';
-            if (empty) empty.style.display = 'none';
-            grid.style.display = 'none';
-            grid.innerHTML = '';
+            if (!silent) {
+                if (loading) loading.style.display = 'block';
+                if (empty) empty.style.display = 'none';
+                grid.style.display = 'none';
+                grid.innerHTML = '';
+            }
             try {
                 const resp = await fetch('/learn-earn/my-nfts');
                 const data = await resp.json();
                 if (loading) loading.style.display = 'none';
                 if (!data.success || !data.nfts || data.nfts.length === 0) {
                     if (empty) empty.style.display = 'block';
+                    if (silent) grid.style.display = 'none';
                     return;
                 }
+                grid.innerHTML = '';
+                _nftDataMap = {};
                 data.nfts.forEach(nft => {
+                    _nftDataMap[nft.token_id] = nft;
                     const card = document.createElement('div');
+                    card.id = 'nft-card-' + nft.token_id;
                     card.style.cssText = 'background: rgba(255,255,255,0.06); border: 2px solid rgba(124,58,237,0.35); border-radius: 16px; padding: 20px; position: relative;';
                     const pct = nft.percentage || Math.round((nft.score / nft.total) * 100);
                     const date = nft.minted_at ? new Date(nft.minted_at).toLocaleDateString() : '';
@@ -3330,11 +3861,12 @@
                                 <div style="background: rgba(124,58,237,0.2); border-radius: 8px; padding: 6px 12px; color: white; font-size: 0.85rem;"><span style="font-weight: 800;">${nft.score}/${nft.total}</span><br><span style="opacity:0.65; font-size:0.75rem;">Score</span></div>
                                 <div style="background: rgba(124,58,237,0.2); border-radius: 8px; padding: 6px 12px; color: white; font-size: 0.85rem;"><span style="font-weight: 800;">${pct}%</span><br><span style="opacity:0.65; font-size:0.75rem;">Accuracy</span></div>
                             </div>
-                            ${isListed ? `<div style="color: #f59e0b; font-weight: 700; font-size: 0.9rem; margin-bottom: 12px;">Listed for ${parseFloat(nft.list_price).toFixed(0)} G$</div>` : `<div style="color: rgba(255,255,255,0.4); font-size: 0.8rem; margin-bottom: 12px;">Minted ${date}</div>`}
+                            ${isListed ? `<div data-price-el style="color: #f59e0b; font-weight: 700; font-size: 0.9rem; margin-bottom: 12px;">Listed for ${parseFloat(nft.list_price).toFixed(0)} G$</div>` : `<div data-price-el style="color: rgba(255,255,255,0.4); font-size: 0.8rem; margin-bottom: 12px;">Minted ${date}</div>`}
                         </div>
                         ${isListed
-                            ? `<button onclick="window.delistNFT(${nft.token_id})" style="width: 100%; padding: 11px; background: rgba(239,68,68,0.8); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">❌ Remove Listing</button>`
-                            : `<button onclick="window.openListModal(${nft.token_id}, '${(nft.quiz_name || '').replace(/'/g, "\\'")}')" style="width: 100%; padding: 11px; background: linear-gradient(135deg,#f59e0b,#d97706); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">🏷️ List for Sale</button>`}
+                            ? `<button onclick="window.delistNFT(${nft.token_id}, this)" style="width: 100%; padding: 11px; background: rgba(239,68,68,0.8); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">❌ Remove Listing</button>`
+                            : `<button onclick="window.openListModal(${nft.token_id}, '${(nft.quiz_name || '').replace(/'/g, "\\'")}', ${nft.score || 0}, ${nft.total || 1})" style="width: 100%; padding: 11px; background: linear-gradient(135deg,#f59e0b,#d97706); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">🏷️ List for Sale</button>`}
+                        <button onclick="window.openBurnModal(${nft.token_id}, '${(nft.quiz_name || '').replace(/'/g, "\\'")}', ${nft.score || 0}, ${nft.total || 1})" style="width:100%;margin-top:8px;padding:9px;background:rgba(239,68,68,0.18);color:rgba(252,165,165,0.9);border:1px solid rgba(239,68,68,0.4);border-radius:10px;font-weight:600;cursor:pointer;font-size:0.82rem;">🔥 Burn this NFT</button>
                         ${nft.contract_address ? `<a href="https://celoscan.io/token/${nft.contract_address}?a=${nft.token_id}" target="_blank" style="display: block; text-align: center; margin-top: 8px; color: rgba(255,255,255,0.4); font-size: 0.75rem; text-decoration: none;">View on Celoscan ↗</a>` : ''}
                     `;
                     grid.appendChild(card);
@@ -3347,14 +3879,27 @@
             }
         };
 
-        window.openListModal = function(tokenId, quizName) {
+        window.openListModal = function(tokenId, quizName, score, total) {
             _pendingListTokenId = tokenId;
+            _pendingListData = { tokenId, quizName, score: parseInt(score)||0, total: parseInt(total)||1 };
             const modal = document.getElementById('nft-list-modal');
-            const desc = document.getElementById('nft-list-modal-desc');
+            const desc  = document.getElementById('nft-list-modal-desc');
             const input = document.getElementById('nft-list-price-input');
-            if (desc) desc.textContent = `NFT #${tokenId} — ${quizName}`;
-            if (input) input.value = '';
-            if (modal) { modal.style.display = 'flex'; }
+            const hint  = document.getElementById('nft-list-price-hint');
+
+            const s = parseInt(score) || 0;
+            const t = parseInt(total) || 1;
+            const suggested = Math.max(1, Math.round((s / t) * 1000));
+            const minPrice  = Math.max(1, Math.round((1 / t) * 1000));
+
+            if (desc)  desc.textContent = `NFT #${tokenId} — ${quizName} (Score: ${s}/${t})`;
+            if (hint)  hint.textContent = `💡 Suggested: ${suggested} G$ (${s}/${t} score × 1,000 G$ max) • Min: ${minPrice} G$`;
+            if (input) {
+                input.min   = minPrice;
+                input.max   = 1000;
+                input.value = suggested;
+            }
+            if (modal) modal.style.display = 'flex';
         };
 
         window.closeListModal = function() {
@@ -3363,16 +3908,36 @@
             _pendingListTokenId = null;
         };
 
+        function _forceCardRepaint(card) {
+            const parent = card.parentNode;
+            if (!parent) return;
+            const next = card.nextSibling;
+            parent.removeChild(card);
+            requestAnimationFrame(function() {
+                if (next) parent.insertBefore(card, next);
+                else parent.appendChild(card);
+            });
+        }
+
         window.confirmListNFT = async function() {
             const tokenId = _pendingListTokenId;
-            const input = document.getElementById('nft-list-price-input');
-            const price = parseFloat(input ? input.value : 0);
+            const input    = document.getElementById('nft-list-price-input');
+            const price    = parseFloat(input ? input.value : 0);
+            const minPrice = parseFloat(input ? input.min : 1) || 1;
             if (!tokenId || isNaN(price) || price <= 0) {
                 showNotification('Please enter a valid price.', 'error');
                 return;
             }
+            if (price > 1000) {
+                showNotification('Maximum listing price is 1,000 G$.', 'error');
+                return;
+            }
+            if (price < minPrice) {
+                showNotification(`Minimum listing price for your score is ${minPrice} G$.`, 'error');
+                return;
+            }
             const btn = document.getElementById('nft-list-confirm-btn');
-            if (btn) { btn.disabled = true; btn.textContent = 'Listing...'; }
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Listing...'; }
             try {
                 const resp = await fetch('/learn-earn/nft-list', {
                     method: 'POST',
@@ -3380,11 +3945,33 @@
                     body: JSON.stringify({token_id: tokenId, price_g: price})
                 });
                 const data = await resp.json();
+                const d = Object.assign({}, _pendingListData);
                 window.closeListModal();
                 if (data.success) {
-                    showNotification(`NFT #${tokenId} listed for ${price} G$!`, 'success');
-                    window.loadMyNFTs();
-                    window.loadNFTMarketplace();
+                    showNotification(`NFT #${tokenId} listed for ${price} G$! ✅`, 'success');
+                    if (_nftDataMap[tokenId]) { _nftDataMap[tokenId].is_listed = true; _nftDataMap[tokenId].list_price = price; }
+                    const card = document.getElementById('nft-card-' + tokenId);
+                    if (card) {
+                        const pct = d.total > 0 ? Math.round((d.score / d.total) * 100) : 0;
+                        const qn = (d.quizName || 'Achievement').replace(/'/g, "\\'");
+                        card.innerHTML = `
+                            <div style="position:absolute;top:12px;right:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:white;border-radius:8px;padding:3px 10px;font-size:0.72rem;font-weight:700;">FOR SALE</div>
+                            <div style="text-align:center;margin-bottom:14px;">
+                                <div style="font-size:2.5rem;margin-bottom:6px;">🏆</div>
+                                <div style="font-weight:800;color:white;font-size:1rem;margin-bottom:4px;">${d.quizName || 'Achievement'}</div>
+                                <div style="color:rgba(255,255,255,0.6);font-size:0.8rem;margin-bottom:8px;">Token #${tokenId}</div>
+                                <div style="display:flex;justify-content:center;gap:12px;margin-bottom:12px;">
+                                    <div style="background:rgba(124,58,237,0.2);border-radius:8px;padding:6px 12px;color:white;font-size:0.85rem;"><span style="font-weight:800;">${d.score}/${d.total}</span><br><span style="opacity:0.65;font-size:0.75rem;">Score</span></div>
+                                    <div style="background:rgba(124,58,237,0.2);border-radius:8px;padding:6px 12px;color:white;font-size:0.85rem;"><span style="font-weight:800;">${pct}%</span><br><span style="opacity:0.65;font-size:0.75rem;">Accuracy</span></div>
+                                </div>
+                                <div style="color:#f59e0b;font-weight:700;font-size:0.9rem;margin-bottom:12px;">Listed for ${price} G$</div>
+                            </div>
+                            <button onclick="window.delistNFT(${tokenId}, this)" style="width:100%;padding:11px;background:rgba(239,68,68,0.8);color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;">❌ Remove Listing</button>
+                            <button onclick="window.openBurnModal(${tokenId}, '${qn}', ${d.score}, ${d.total})" style="width:100%;margin-top:8px;padding:9px;background:rgba(239,68,68,0.18);color:rgba(252,165,165,0.9);border:1px solid rgba(239,68,68,0.4);border-radius:10px;font-weight:600;cursor:pointer;font-size:0.82rem;">🔥 Burn this NFT</button>
+                        `;
+                        _forceCardRepaint(card);
+                    }
+                    setTimeout(function() { window.loadMyNFTs(); window.loadNFTMarketplace(); }, 900);
                 } else {
                     showNotification(data.error || 'Failed to list NFT.', 'error');
                 }
@@ -3395,8 +3982,8 @@
             }
         };
 
-        window.delistNFT = async function(tokenId) {
-            if (!confirm(`Remove NFT #${tokenId} from the marketplace?`)) return;
+        window.delistNFT = async function(tokenId, btnEl) {
+            if (btnEl) { btnEl.disabled = true; btnEl.textContent = '⏳ Removing...'; btnEl.style.background = 'rgba(100,100,100,0.6)'; }
             try {
                 const resp = await fetch('/learn-earn/nft-delist', {
                     method: 'POST',
@@ -3406,45 +3993,469 @@
                 const data = await resp.json();
                 if (data.success) {
                     showNotification(`NFT #${tokenId} removed from marketplace.`, 'success');
-                    window.loadMyNFTs();
-                    window.loadNFTMarketplace();
+                    if (_nftDataMap[tokenId]) { _nftDataMap[tokenId].is_listed = false; _nftDataMap[tokenId].list_price = null; }
+                    const card = document.getElementById('nft-card-' + tokenId);
+                    const d = _nftDataMap[tokenId] || {};
+                    if (card) {
+                        const pct = d.total > 0 ? Math.round(((d.score || 0) / d.total) * 100) : 0;
+                        const date = d.minted_at ? new Date(d.minted_at).toLocaleDateString() : '';
+                        const qn = (d.quiz_name || 'Achievement').replace(/'/g, "\\'");
+                        card.innerHTML = `
+                            <div style="text-align:center;margin-bottom:14px;">
+                                <div style="font-size:2.5rem;margin-bottom:6px;">🏆</div>
+                                <div style="font-weight:800;color:white;font-size:1rem;margin-bottom:4px;">${d.quiz_name || 'Achievement'}</div>
+                                <div style="color:rgba(255,255,255,0.6);font-size:0.8rem;margin-bottom:8px;">Token #${tokenId}</div>
+                                <div style="display:flex;justify-content:center;gap:12px;margin-bottom:12px;">
+                                    <div style="background:rgba(124,58,237,0.2);border-radius:8px;padding:6px 12px;color:white;font-size:0.85rem;"><span style="font-weight:800;">${d.score || 0}/${d.total || 1}</span><br><span style="opacity:0.65;font-size:0.75rem;">Score</span></div>
+                                    <div style="background:rgba(124,58,237,0.2);border-radius:8px;padding:6px 12px;color:white;font-size:0.85rem;"><span style="font-weight:800;">${pct}%</span><br><span style="opacity:0.65;font-size:0.75rem;">Accuracy</span></div>
+                                </div>
+                                <div style="color:rgba(255,255,255,0.4);font-size:0.8rem;margin-bottom:12px;">Minted ${date}</div>
+                            </div>
+                            <button onclick="window.openListModal(${tokenId}, '${qn}', ${d.score || 0}, ${d.total || 1})" style="width:100%;padding:11px;background:linear-gradient(135deg,#f59e0b,#d97706);color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;">🏷️ List for Sale</button>
+                            <button onclick="window.openBurnModal(${tokenId}, '${qn}', ${d.score || 0}, ${d.total || 1})" style="width:100%;margin-top:8px;padding:9px;background:rgba(239,68,68,0.18);color:rgba(252,165,165,0.9);border:1px solid rgba(239,68,68,0.4);border-radius:10px;font-weight:600;cursor:pointer;font-size:0.82rem;">🔥 Burn this NFT</button>
+                            ${d.contract_address ? `<a href="https://celoscan.io/token/${d.contract_address}?a=${tokenId}" target="_blank" style="display:block;text-align:center;margin-top:8px;color:rgba(255,255,255,0.4);font-size:0.75rem;text-decoration:none;">View on Celoscan ↗</a>` : ''}
+                        `;
+                        _forceCardRepaint(card);
+                    }
+                    setTimeout(function() { window.loadMyNFTs(); window.loadNFTMarketplace(); }, 900);
                 } else {
+                    if (btnEl) { btnEl.disabled = false; btnEl.textContent = '❌ Remove Listing'; btnEl.style.background = 'rgba(239,68,68,0.8)'; }
                     showNotification(data.error || 'Failed to delist.', 'error');
                 }
             } catch(e) {
+                if (btnEl) { btnEl.disabled = false; btnEl.textContent = '❌ Remove Listing'; btnEl.style.background = 'rgba(239,68,68,0.8)'; }
                 showNotification('Failed to delist NFT.', 'error');
             }
         };
 
-        window.buyNFT = async function(tokenId, price, quizName) {
-            const balEl = document.getElementById('nft-balance-display');
-            const myBalance = balEl ? parseFloat(balEl.textContent) || 0 : 0;
-            if (myBalance < price) {
-                showNotification(`Insufficient balance. You have ${myBalance.toFixed(2)} G$, need ${price} G$. Earn more G$ by completing quizzes!`, 'error');
-                return;
-            }
-            if (!confirm(`Buy NFT #${tokenId} (${quizName}) for ${price} G$?\n\nYour current balance: ${myBalance.toFixed(2)} G$`)) return;
-            showNotification('Processing purchase on Celo blockchain... App is paying gas!', 'info');
+        // ── NFT Burn Modal state ──
+        let _burnTokenId = null, _burnAmount = 0, _burnQuizName = '';
+
+        window.openBurnModal = function(tokenId, quizName, score, total) {
+            _burnTokenId = tokenId;
+            _burnQuizName = quizName;
+            _burnAmount = total > 0 ? Math.round((score / total) * 1000) : 0;
+            const desc = document.getElementById('nft-burn-modal-desc');
+            const reward = document.getElementById('nft-burn-reward-display');
+            const btn = document.getElementById('nft-burn-confirm-btn');
+            if (desc) desc.textContent = `Token #${tokenId} — ${quizName} (${score}/${total})`;
+            if (reward) reward.textContent = `${_burnAmount} G$`;
+            if (btn) { btn.disabled = false; btn.textContent = '🔥 Burn & Claim'; }
+            const modal = document.getElementById('nft-burn-modal');
+            if (modal) modal.style.display = 'flex';
+        };
+
+        window.closeBurnModal = function() {
+            const modal = document.getElementById('nft-burn-modal');
+            if (modal) modal.style.display = 'none';
+            _burnTokenId = null;
+        };
+
+        window.confirmBurnNFT = async function() {
+            const tokenId = _burnTokenId;
+            if (!tokenId) return;
+            const btn = document.getElementById('nft-burn-confirm-btn');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Burning...'; }
             try {
-                const resp = await fetch('/learn-earn/nft-buy', {
+                const resp = await fetch('/learn-earn/nft-burn', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({token_id: tokenId})
                 });
                 const data = await resp.json();
+                window.closeBurnModal();
                 if (data.success) {
-                    showNotification(`NFT #${tokenId} purchased for ${price} G$! New balance: ${parseFloat(data.new_balance).toFixed(2)} G$`, 'success');
-                    window.loadNFTBalance();
-                    window.loadNFTMarketplace();
-                    window.loadMyNFTs();
+                    showNotification(`🔥 NFT #${tokenId} burned! ${data.burn_amount} G$ sent to your wallet. ✅`, 'success');
+                    const card = document.getElementById('nft-card-' + tokenId);
+                    if (card) {
+                        const parent = card.parentNode;
+                        if (parent) {
+                            card.style.opacity = '0';
+                            card.style.transform = 'scale(0.8)';
+                            card.style.transition = 'opacity 0.4s, transform 0.4s';
+                            setTimeout(function() {
+                                if (card.parentNode) card.parentNode.removeChild(card);
+                            }, 400);
+                        }
+                    }
+                    setTimeout(function() { window.loadMyNFTs(); window.loadNFTMarketplace(); }, 600);
                 } else {
-                    showNotification(data.error || 'Purchase failed.', 'error');
+                    showNotification(data.error || 'Failed to burn NFT.', 'error');
+                    if (btn) { btn.disabled = false; btn.textContent = '🔥 Burn & Claim'; }
                 }
             } catch(e) {
-                showNotification('Purchase failed. Please try again.', 'error');
-                console.error('Buy NFT error:', e);
+                showNotification('Failed to burn NFT. Please try again.', 'error');
+                if (btn) { btn.disabled = false; btn.textContent = '🔥 Burn & Claim'; }
             }
         };
+
+        // ── NFT Buy Modal state ──
+        let _buyTokenId = null, _buyPrice = 0, _buyQuizName = '', _buySellerWallet = '';
+
+        function _buyModalShowStep(step) {
+            ['confirm','wc','processing','done','error'].forEach(s => {
+                const el = document.getElementById('nft-buy-step-' + s);
+                if (el) el.style.display = s === step ? 'block' : 'none';
+            });
+        }
+
+        function _buyWcSubState(id) {
+            ['loading','qrbox','sending'].forEach(s => {
+                const el = document.getElementById('nft-buy-wc-' + s);
+                if (el) el.style.display = s === id ? 'block' : 'none';
+            });
+        }
+
+        function _buyWcAlert(type, html) {
+            const el = document.getElementById('nft-buy-wc-alert');
+            if (!el) return;
+            const styles = {
+                error:   'background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;',
+                success: 'background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#86efac;',
+                info:    'background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;'
+            };
+            el.setAttribute('style', (styles[type]||styles.info)+'display:block;border-radius:10px;padding:0.7rem 0.9rem;font-size:0.82rem;font-weight:500;text-align:left;margin-bottom:12px;');
+            el.innerHTML = html;
+        }
+
+        window.buyNFT = function(tokenId, price, quizName, sellerWallet) {
+            const balEl = document.getElementById('nft-balance-display');
+            const myBalance = balEl ? parseFloat(balEl.textContent) || 0 : 0;
+            if (myBalance < price) {
+                showNotification(`Insufficient G$ balance. You have ${myBalance.toFixed(2)} G$, need ${price} G$.`, 'error');
+                return;
+            }
+            if (!sellerWallet || !sellerWallet.startsWith('0x')) {
+                showNotification('Cannot load seller wallet address. Please refresh and try again.', 'error');
+                return;
+            }
+            _buyTokenId      = tokenId;
+            _buyPrice        = price;
+            _buyQuizName     = quizName;
+            _buySellerWallet = sellerWallet;
+
+            const desc = document.getElementById('nft-buy-modal-desc');
+            const priceEl = document.getElementById('nft-buy-price-display');
+            if (desc) desc.textContent = `NFT #${tokenId} — ${quizName}`;
+            if (priceEl) priceEl.textContent = `${parseFloat(price).toFixed(0)} G$`;
+
+            _buyModalShowStep('confirm');
+            const modal = document.getElementById('nft-buy-modal');
+            if (modal) { modal.style.display = 'flex'; }
+        };
+
+        window.closeBuyModal = function() {
+            const modal = document.getElementById('nft-buy-modal');
+            if (modal) modal.style.display = 'none';
+            _buyTokenId = null; _buyPrice = 0; _buyQuizName = ''; _buySellerWallet = '';
+        };
+
+        window.retryBuyNFT = function() {
+            if (_buyTokenId) {
+                _buyModalShowStep('confirm');
+            } else {
+                window.closeBuyModal();
+            }
+        };
+
+        // ── Core buy logic after wallet is connected (shared by DApp + WC) ──────
+        async function _executeBuyWithProvider(provider, buyerAddress) {
+            const tokenId      = _buyTokenId;
+            const price        = _buyPrice;
+            const sellerWallet = _buySellerWallet;
+
+            _buyModalShowStep('processing');
+            const procTitle = document.getElementById('nft-buy-processing-title');
+            const procMsg   = document.getElementById('nft-buy-processing-msg');
+            const s1icon    = document.getElementById('nft-buy-step1-icon');
+            const s2icon    = document.getElementById('nft-buy-step2-icon');
+            const s2row     = document.getElementById('nft-buy-step2-row');
+            if (procTitle) procTitle.textContent = 'Sending G$ to seller…';
+            if (procMsg)   procMsg.textContent   = 'Please confirm the transaction in your wallet.';
+            if (s1icon)    s1icon.textContent     = '⏳';
+            if (s2icon)    s2icon.textContent     = '⭕';
+            if (s2row)     s2row.style.color      = 'rgba(255,255,255,0.4)';
+
+            const priceWei = BigInt(Math.ceil(price)) * BigInt('1000000000000000000');
+            const calldata = '0xa9059cbb'
+                + sellerWallet.slice(2).toLowerCase().padStart(64, '0')
+                + priceWei.toString(16).padStart(64, '0');
+
+            let transferTx;
+            if (provider && typeof provider.request === 'function') {
+                // WalletConnect session provider
+                transferTx = await provider.request({
+                    method: 'eth_sendTransaction',
+                    params: [{ from: buyerAddress, to: G_TOKEN_ADDRESS, data: calldata, value: '0x0' }]
+                });
+            } else {
+                // window.ethereum (DApp browser)
+                transferTx = await window.ethereum.request({
+                    method: 'eth_sendTransaction',
+                    params: [{ from: buyerAddress, to: G_TOKEN_ADDRESS, data: calldata, value: '0x0' }]
+                });
+            }
+
+            // ── CRITICAL: Save pending purchase to localStorage IMMEDIATELY ────
+            // DApp browsers (Trust Wallet, MetaMask) sometimes redirect away after
+            // the wallet call returns. Saving here lets us recover on the next page load.
+            localStorage.setItem('gm_pending_buy', JSON.stringify({
+                tokenId: tokenId,
+                txHash:  transferTx,
+                ts:      Date.now()
+            }));
+
+            if (s1icon) s1icon.textContent = '✅';
+            if (s2row)  s2row.style.color  = 'rgba(255,255,255,0.7)';
+            if (s2icon) s2icon.textContent = '⏳';
+            if (procMsg) procMsg.textContent = 'Notifying server to transfer NFT…';
+
+            await _completeBuyOnServer(tokenId, transferTx);
+
+            if (s2icon) s2icon.textContent = '✅';
+            _buyModalShowStep('done');
+            const doneMsg = document.getElementById('nft-buy-done-msg');
+            if (doneMsg) doneMsg.textContent = `NFT #${tokenId} is now yours! Check "My NFTs".`;
+            showNotification(`🎉 NFT #${tokenId} purchased successfully!`, 'success');
+            if (typeof window.loadMyNFTs === 'function') setTimeout(window.loadMyNFTs, 1500);
+            if (typeof window.loadNFTMarketplace === 'function') setTimeout(window.loadNFTMarketplace, 1500);
+        }
+
+        // ── Calls backend to finalize purchase; clears pending on success ────
+        async function _completeBuyOnServer(tokenId, txHash) {
+            const resp = await fetch('/learn-earn/nft-buy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token_id: tokenId, g_tx_hash: txHash })
+            });
+            const result = await resp.json();
+            if (result.success) {
+                localStorage.removeItem('gm_pending_buy');
+            } else {
+                throw new Error(result.error || 'Server could not complete the NFT transfer.');
+            }
+        }
+
+        window.executeBuyNFT = async function() {
+            const tokenId      = _buyTokenId;
+            const price        = _buyPrice;
+            const sellerWallet = _buySellerWallet;
+            if (!tokenId || price <= 0 || !sellerWallet) return;
+
+            // ── DApp browser detected → direct ethereum flow ──────────────────
+            if (window.ethereum) {
+                _buyModalShowStep('processing');
+                const procTitle = document.getElementById('nft-buy-processing-title');
+                const procMsg   = document.getElementById('nft-buy-processing-msg');
+                const s1icon    = document.getElementById('nft-buy-step1-icon');
+                const s2icon    = document.getElementById('nft-buy-step2-icon');
+                const s2row     = document.getElementById('nft-buy-step2-row');
+                if (procTitle) procTitle.textContent = 'Waiting for wallet…';
+                if (procMsg)   procMsg.textContent   = 'Connecting to wallet…';
+                if (s1icon)    s1icon.textContent     = '⏳';
+                if (s2icon)    s2icon.textContent     = '⭕';
+                if (s2row)     s2row.style.color      = 'rgba(255,255,255,0.4)';
+
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    if (!accounts || accounts.length === 0) throw new Error('No wallet account found. Please unlock your wallet.');
+                    const buyerAddress = accounts[0];
+
+                    if (procMsg) procMsg.textContent = 'Switching to Celo network…';
+                    try {
+                        await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0xA4EC' }] });
+                    } catch (switchErr) {
+                        if (switchErr.code === 4902 || switchErr.code === -32603) {
+                            await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [{ chainId: '0xA4EC', chainName: 'Celo Mainnet', nativeCurrency: { name: 'CELO', symbol: 'CELO', decimals: 18 }, rpcUrls: ['https://forno.celo.org'], blockExplorerUrls: ['https://celoscan.io'] }] });
+                        } else if (switchErr.code !== 4001) { throw switchErr; }
+                    }
+
+                    if (procMsg) procMsg.textContent = 'Please confirm sending G$ to seller in your wallet…';
+                    await _executeBuyWithProvider(null, buyerAddress);
+
+                } catch(e) {
+                    _buyHandleError(e);
+                }
+                return;
+            }
+
+            // ── Regular browser → WalletConnect QR flow ──────────────────────
+            if (!window._wcOpen) {
+                _buyModalShowStep('error');
+                const msg = document.getElementById('nft-buy-error-msg');
+                if (msg) msg.textContent = 'WalletConnect is not available. Please refresh and try again.';
+                return;
+            }
+
+            _buyModalShowStep('wc');
+            _buyWcSubState('loading');
+            document.getElementById('nft-buy-wc-alert').style.display = 'none';
+            const wcCanvas = document.getElementById('nft-buy-wc-canvas');
+            if (wcCanvas) wcCanvas.innerHTML = '';
+
+            try {
+                const buyerAddress = await window._wcOpen(function(uri) {
+                    if (wcCanvas) {
+                        wcCanvas.innerHTML = '';
+                        if (window.QRCode) {
+                            new QRCode(wcCanvas, { text: uri, width: 200, height: 200, colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.M });
+                        } else {
+                            wcCanvas.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&bgcolor=ffffff&color=000000&data=' + encodeURIComponent(uri) + '" width="200" height="200" style="display:block;border-radius:6px;" />';
+                        }
+                    }
+                    _buyWcSubState('qrbox');
+                });
+
+                // Wallet connected — show sending state
+                _buyWcSubState('sending');
+                const sendMsg = document.getElementById('nft-buy-wc-sending-msg');
+                if (sendMsg) sendMsg.textContent = 'Wallet connected! Sending G$ to seller…';
+
+                // Build WC session provider wrapper
+                const wcProvider = {
+                    request: function(args) {
+                        return window._wcSignClient.request({
+                            topic: window._wcSession.topic,
+                            chainId: 'eip155:42220',
+                            request: args
+                        });
+                    }
+                };
+
+                if (sendMsg) sendMsg.textContent = 'Please confirm the transaction in your wallet app…';
+                await _executeBuyWithProvider(wcProvider, buyerAddress);
+
+            } catch(e) {
+                const msg = (e && e.message) ? e.message : String(e);
+                const lower = msg.toLowerCase();
+                if (lower.includes('cancel') || lower.includes('reject') || lower.includes('declined') || lower.includes('denied')) {
+                    _buyWcAlert('error', '❌ Wallet connection was rejected. Please try again.');
+                    _buyWcSubState('loading');
+                } else {
+                    _buyHandleError(e);
+                }
+            }
+        };
+
+        function _buyHandleError(e) {
+            const isReject = e && (e.code === 4001 || (e.message && e.message.toLowerCase().includes('reject')));
+            _buyModalShowStep('error');
+            const errMsg = document.getElementById('nft-buy-error-msg');
+            const errorText = isReject
+                ? 'You cancelled the wallet transaction. Confirmation is required to complete the purchase.'
+                : (e.message || 'Purchase failed. Please try again.');
+            if (errMsg) {
+                errMsg.innerHTML = '';
+                errMsg.appendChild(document.createTextNode(errorText));
+                if (e && e.txHash) {
+                    const link = document.createElement('a');
+                    link.href = `https://celoscan.io/tx/${e.txHash}`;
+                    link.target = '_blank'; link.rel = 'noopener';
+                    link.textContent = ' View on CeloScan →';
+                    link.style.cssText = 'color:#f59e0b;display:block;margin-top:8px;font-size:0.8rem;';
+                    errMsg.appendChild(link);
+                }
+            }
+            console.error('Buy NFT error:', e);
+        }
     </script>
+
+    <!-- QRCode.js + WalletConnect SDK (lazy-loaded for Buy NFT modal) -->
+    <script>
+    (function() {
+        function loadLib(src, cb) {
+            var s = document.createElement('script');
+            s.src = src; s.onload = function() { if(cb) cb(); };
+            document.body.appendChild(s);
+        }
+        function preload() {
+            if (!window.QRCode) loadLib('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js');
+        }
+        if (window.requestIdleCallback) { requestIdleCallback(preload); }
+        else { setTimeout(preload, 3000); }
+    })();
+    </script>
+
+    {% if walletconnect_project_id %}
+    <script>
+    window._wcProjectId = '{{ walletconnect_project_id }}';
+    window._wcSignClient = null;
+    window._wcSession    = null;
+    window._wcSdkLoading = null;
+
+    function _wcLoadSdk() {
+        if (window._wcSdkLoading) return window._wcSdkLoading;
+        window._wcSdkLoading = new Promise(function(resolve, reject) {
+            var localSrc = '{{ url_for("static", filename="js/wc-bundle.js") }}';
+            var cdnSrc   = 'https://cdn.jsdelivr.net/npm/@walletconnect/sign-client@2.17.0/dist/index.umd.js';
+            function loadScript(src, ok, fail) {
+                var s = document.createElement('script');
+                s.src = src; s.onload = ok; s.onerror = fail;
+                document.head.appendChild(s);
+            }
+            loadScript(localSrc, function() {
+                var SC = (window['@walletconnect/sign-client'] || {}).SignClient;
+                if (SC) { resolve(SC); } else {
+                    loadScript(cdnSrc, function() {
+                        var SC2 = (window['@walletconnect/sign-client'] || {}).SignClient;
+                        SC2 ? resolve(SC2) : reject(new Error('WalletConnect SDK unavailable'));
+                    }, function() { reject(new Error('WalletConnect SDK unavailable')); });
+                }
+            }, function() {
+                loadScript(cdnSrc, function() {
+                    var SC2 = (window['@walletconnect/sign-client'] || {}).SignClient;
+                    SC2 ? resolve(SC2) : reject(new Error('WalletConnect SDK unavailable'));
+                }, function() { reject(new Error('WalletConnect SDK unavailable')); });
+            });
+        });
+        return window._wcSdkLoading;
+    }
+
+    window._wcGetClient = function() {
+        if (window._wcSignClient) return Promise.resolve(window._wcSignClient);
+        return _wcLoadSdk().then(function(SignClient) {
+            return SignClient.init({
+                projectId: window._wcProjectId,
+                metadata: {
+                    name: 'GoodMarket',
+                    description: 'Learn & Earn with GoodDollar on Celo',
+                    url: window.location.origin,
+                    icons: [window.location.origin + '/static/icons/icon-192x192.png']
+                }
+            }).then(function(client) { window._wcSignClient = client; return client; });
+        });
+    };
+
+    window._wcOpen = function(onUri) {
+        return window._wcGetClient().then(function(client) {
+            return client.connect({
+                requiredNamespaces: {},
+                optionalNamespaces: {
+                    eip155: {
+                        methods: ['eth_accounts', 'eth_sendTransaction', 'personal_sign'],
+                        chains:  ['eip155:42220', 'eip155:1'],
+                        events:  ['chainChanged', 'accountsChanged']
+                    }
+                }
+            }).then(function(result) {
+                if (result.uri && typeof onUri === 'function') onUri(result.uri);
+                return result.approval().then(function(session) {
+                    window._wcSession = session;
+                    var ns = session.namespaces || {};
+                    var keys = Object.keys(ns);
+                    for (var i = 0; i < keys.length; i++) {
+                        var accts = (ns[keys[i]].accounts || []);
+                        if (accts.length) return accts[0].split(':').pop();
+                    }
+                    throw new Error('No accounts returned from wallet');
+                });
+            });
+        });
+    };
+
+    // Warm-up relay in background
+    setTimeout(function() { window._wcGetClient().catch(function() {}); }, 2000);
+    </script>
+    {% endif %}
 </body>
 </html>
