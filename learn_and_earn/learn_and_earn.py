@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 from functools import wraps
 from flask import Blueprint, request, jsonify, render_template, session
 from .blockchain import learn_blockchain_service
-from .nft_service import achievement_nft_service
 # Contract integration removed - using direct private key disbursement only
 from supabase_client import get_supabase_client
 import random
@@ -553,8 +552,8 @@ class LearnEarnQuizManager:
                 'eligible': True,
                 'blocked': False,
                 'reason': 'No recent quiz completion found',
-                'message': f'You can take the quiz and earn up to {quiz_manager.questions_per_quiz * quiz_manager.reward_per_correct} G$!',
-                'max_reward': quiz_manager.questions_per_quiz * quiz_manager.reward_per_correct,
+                'message': 'You can take the quiz and earn an Achievement NFT!',
+                'max_reward': 0,
                 'can_take_now': True,
                 'cooldown_hours': 120,
                 'feature_available': True
@@ -565,15 +564,15 @@ class LearnEarnQuizManager:
             import traceback
             logger.error(f"❌ Traceback: {traceback.format_exc()}")
             return {
-                'eligible': True,  # Default to eligible if check fails
+                'eligible': True,
                 'blocked': False,
                 'reason': 'Eligibility check bypassed due to error',
-                'message': f'Learn & Earn available - you can take the quiz and earn up to {quiz_manager.questions_per_quiz * quiz_manager.reward_per_correct} G$!',
+                'message': 'Learn & Earn available - take the quiz to earn an Achievement NFT!',
                 'feature_available': True,
-                'max_reward': quiz_manager.questions_per_quiz * quiz_manager.reward_per_correct,
+                'max_reward': 0,
                 'can_take_now': True,
                 'cooldown_hours': 120,
-                'error': str(e)  # Include error for debugging
+                'error': str(e)
             }
 
     def get_quiz_history(self, wallet_address, limit=500):
@@ -1101,7 +1100,12 @@ def learn_earn_dashboard():
     except Exception as e:
         logger.error(f"❌ Error tracking analytics: {e}")
 
-    return render_template('learn_and_earn.html', wallet=wallet)
+    from flask import make_response
+    resp = make_response(render_template('learn_and_earn.html', wallet=wallet))
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
 
 @learn_earn_bp.route('/start-quiz', methods=['POST'])
 @learn_earn_token_required
@@ -1377,218 +1381,44 @@ def submit_quiz(current_user):
             'submission_allowed': True # Submission is always allowed, reward is conditional
         }
 
-        # Process rewards first - before saving quiz attempt to database
-        transaction_hash = None
-        disbursement_success = False
-        is_fake_transaction = False
-        insufficient_balance = False
-        should_block_user = False
+        # Save quiz attempt to database
         quiz_log = None
-        error_message = None
-
-        # Check eligibility using sync method to avoid event loop issues
-        eligible = quiz_manager.check_user_eligibility(current_user)
-
-        if eligible and reward_amount > 0:
-            # Prepare quiz result summary for reward disbursement
-            quiz_result_summary = {
-                'correct': quiz_result.get('correct_answers'),
-                'total': total_questions,
-                'score_percentage': round((score / total_questions) * 100, 1) if total_questions > 0 else 0
-            }
-
-            # Direct private key disbursement
-            logger.info(f"💰 Processing direct reward disbursement for {current_user}")
-            logger.info(f"💰 Reward amount: {reward_amount} G$")
-            logger.info(f"📊 Quiz score: {score}/{total_questions} ({quiz_result_summary['score_percentage']}%)")
-
-            # Check if reward system is configured before attempting disbursement
-            if not learn_blockchain_service.is_configured:
-                logger.error(f"❌ Reward system not configured - cannot disburse rewards")
-                error_message = "Learn & Earn wallet not configured. Please contact the GIMT team to set up the reward system."
-                transaction_hash = None
-                disbursement_success = False
-                is_fake_transaction = False
-                should_block_user = False
-                insufficient_balance = False
-            else:
-                # Check Learn wallet balance before attempting disbursement
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                try:
-                    learn_balance = loop.run_until_complete(learn_blockchain_service.get_learn_wallet_balance())
-
-                    if learn_balance < reward_amount:
-                        logger.error(f"❌ Learn wallet insufficient balance: {learn_balance} G$ < {reward_amount} G$")
-                        error_message = "Learn & Earn rewards are temporarily unavailable due to high demand. The reward wallet is being refilled by the GIMT Team. Please try again later."
-                        transaction_hash = None
-                        disbursement_success = False
-                        is_fake_transaction = False
-                        should_block_user = False
-                        insufficient_balance = True
-                    else:
-                        # Attempt reward disbursement
-                        reward_result = loop.run_until_complete(
-                            learn_blockchain_service.send_g_reward(current_user, reward_amount, quiz_result_summary)
-                        )
-
-                        if reward_result.get('success'):
-                            transaction_hash = reward_result.get('tx_hash')
-                            disbursement_success = True
-                            is_fake_transaction = reward_result.get('fake_transaction', False)
-                            should_block_user = True
-
-                            logger.info(f"✅ Direct reward disbursement successful: {transaction_hash}")
-                            logger.info(f"🔗 Block: {reward_result.get('block_number')}")
-                            logger.info(f"⛽ Gas used: {reward_result.get('gas_used')}")
-                        else:
-                            # Reward disbursement failed
-                            error_message = reward_result.get('error', 'Unknown blockchain error')
-                            logger.error(f"❌ Reward disbursement failed: {error_message}")
-                            logger.error(f"💳 Wallet: {current_user}")
-                            logger.error(f"💰 Amount: {reward_amount} G$")
-
-                            transaction_hash = None
-                            disbursement_success = False
-                            is_fake_transaction = False
-                            should_block_user = False
-                            insufficient_balance = 'insufficient balance' in error_message.lower() or reward_result.get('insufficient_balance', False)
-                finally:
-                    loop.close()
-
-        # Only save quiz attempt to database if reward was actually sent OR if user wasn't eligible
-        if should_block_user or not eligible:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                quiz_log = loop.run_until_complete(quiz_manager.save_quiz_attempt(
-                    current_user,
-                    stored_questions, # Pass the actual questions object from session
-                    user_answers,
-                    reward_amount,
-                    feature_info_for_log
-                ))
-            finally:
-                loop.close()
-
-            if not quiz_log and should_block_user:
-                logger.error(f"❌ Failed to save quiz attempt but reward was sent - this may cause sync issues")
-
-            # Update quiz log with transaction details if reward was sent
-            if quiz_log and transaction_hash and disbursement_success:
-                try:
-                    supabase = get_supabase_client()
-                    supabase.table('learnearn_log')\
-                        .update({
-                            'transaction_hash': transaction_hash,
-                            'reward_status': 'sent',
-                            'sent_at': datetime.utcnow().isoformat() + 'Z' # Use UTC with Z suffix
-                        })\
-                        .eq('quiz_id', quiz_log['quiz_id'])\
-                        .execute()
-                    logger.info(f"✅ Quiz log updated with transaction hash: {transaction_hash}")
-                except Exception as update_error:
-                    logger.error(f"❌ Failed to update quiz log with transaction: {update_error}")
-
-                try:
-                    if reward_amount > 0:
-                        import psycopg2
-                        import psycopg2.extras
-                        pg = psycopg2.connect(os.getenv('DATABASE_URL'), cursor_factory=psycopg2.extras.RealDictCursor)
-                        try:
-                            cur = pg.cursor()
-                            cur.execute('SELECT balance FROM nft_marketplace_balance WHERE wallet_address=%s', (current_user.lower(),))
-                            row = cur.fetchone()
-                            current_bal = float(row['balance']) if row else 0.0
-                            new_bal = current_bal + float(reward_amount)
-                            if row:
-                                cur.execute('UPDATE nft_marketplace_balance SET balance=%s, updated_at=NOW() WHERE wallet_address=%s', (new_bal, current_user.lower()))
-                            else:
-                                cur.execute('INSERT INTO nft_marketplace_balance (wallet_address, balance) VALUES (%s,%s)', (current_user.lower(), new_bal))
-                            pg.commit()
-                            logger.info(f"💎 NFT marketplace balance credited: +{reward_amount} G$ for {current_user[:10]}...")
-                        finally:
-                            pg.close()
-                except Exception as bal_err:
-                    logger.warning(f"Failed to credit marketplace balance: {bal_err}")
-        else:
-            logger.info(f"📝 Quiz completed but not saved to database - reward failed and user remains eligible for retry")
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            quiz_log = loop.run_until_complete(quiz_manager.save_quiz_attempt(
+                current_user,
+                stored_questions,
+                user_answers,
+                0,  # no G$ reward — NFT is the reward now
+                feature_info_for_log
+            ))
+        finally:
+            loop.close()
 
         # Clear quiz session
         session.pop('quiz_questions', None)
         session.pop('quiz_session_id', None)
         session.pop('quiz_started_at', None)
 
-        # Determine message and notification based on transaction result
-        if disbursement_success and not is_fake_transaction:
-            message = f'Quiz completed! You earned {reward_amount} G$ successfully'
-            notification_data = {
-                'show_notification': True,
-                'notification_type': 'success',
-                'notification_message': message
-            }
-        elif insufficient_balance:
-            message = 'Learn & Earn rewards are temporarily unavailable due to high demand. The reward wallet is being refilled by the GIMT Team. Please try again later.'
-            notification_data = {
-                'show_notification': True,
-                'notification_type': 'insufficient_balance',
-                'notification_message': message,
-                'voice_message': 'Learn & Earn rewards temporarily unavailable due to high demand. Please try again later.',
-                'high_demand': True
-            }
-        elif not should_block_user and reward_amount > 0 and error_message:
-            message = f'Quiz completed but reward processing failed: {error_message}. You can try again immediately.'
-            notification_data = {
-                'show_notification': True,
-                'notification_type': 'retry_available',
-                'notification_message': message,
-                'can_retry_immediately': True,
-                'error_details': error_message
-            }
-        elif not should_block_user and reward_amount > 0:
-            message = 'Quiz completed but reward processing failed - you can try again immediately'
-            notification_data = {
-                'show_notification': True,
-                'notification_type': 'retry_available',
-                'notification_message': 'Quiz completed but reward processing failed. You can take the quiz again immediately.',
-                'can_retry_immediately': True
-            }
-        else:
-            message = 'Quiz completed successfully'
-            notification_data = {
-                'show_notification': True,
-                'notification_type': 'success',
-                'notification_message': message
-            }
+        logger.info(f"✅ Quiz completed for {current_user} — {score}/{total_questions}. Achievement NFT available to mint.")
 
-        logger.info(f"📊 Quiz completed - showing results without ranking/username complexity")
+        saved_quiz_id = quiz_log.get('quiz_id', '') if quiz_log else ''
 
-        # Add processing notification to response
-        response_data = {
+        return jsonify({
             'success': True,
             'score': score,
             'total_questions': total_questions,
-            'rewards': reward_amount,
-            'transaction_hash': transaction_hash,
-            'disbursement_success': disbursement_success,
-            'is_fake_transaction': is_fake_transaction,
-            'insufficient_balance': insufficient_balance,
-            'message': message,
-            'feature_status': 'completed_successfully' if disbursement_success else 'completed_pending_reward',
-            'blocked_for_24h': should_block_user,  # Only block if reward was actually sent
-            'can_retry_immediately': not should_block_user,  # Allow immediate retry if reward failed
-            **notification_data  # Include notification data
-        }
-
-        # Include processing notification if reward processing occurred
-        if eligible and reward_amount > 0:
-            response_data['processing_notification'] = {
-                'show_processing': True,
-                'processing_message': 'The GIMT team are processing your request, please wait a few seconds...',
-                'processing_type': 'reward_disbursement'
-            }
-
-        return jsonify(response_data), 200
+            'rewards': 0,
+            'quiz_id': saved_quiz_id,
+            'message': 'Quiz completed! Mint your Achievement NFT as your reward.',
+            'feature_status': 'completed_successfully',
+            'blocked_for_24h': True,
+            'can_retry_immediately': False,
+            'show_notification': True,
+            'notification_type': 'success',
+            'notification_message': f'Quiz completed! {score}/{total_questions} correct. Mint your Achievement NFT!'
+        }), 200
 
     except Exception as e:
         logger.error(f"❌ Error submitting quiz for {current_user}: {e}")
@@ -2421,6 +2251,600 @@ def verify_sponsorship():
         return jsonify({'success': False, 'error': 'Verification failed. Please try again.'}), 500
 
 
+@learn_earn_bp.route('/nft-balance', methods=['GET'])
+@learn_earn_token_required
+def get_nft_balance(current_user):
+    """Get user's on-chain G$ balance for NFT marketplace"""
+    try:
+        from web3 import Web3
+        w3 = Web3(Web3.HTTPProvider(os.getenv('CELO_RPC_URL', 'https://forno.celo.org'), request_kwargs={'timeout': 10}))
+        g_dollar_address = os.getenv('G_DOLLAR_TOKEN_ADDRESS', '0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A')
+        erc20_abi = [{"inputs": [{"name": "account", "type": "address"}], "name": "balanceOf", "outputs": [{"type": "uint256"}], "stateMutability": "view", "type": "function"}]
+        token = w3.eth.contract(address=Web3.to_checksum_address(g_dollar_address), abi=erc20_abi)
+        balance_wei = token.functions.balanceOf(Web3.to_checksum_address(current_user)).call()
+        balance = balance_wei / (10 ** 18)
+        return jsonify({'success': True, 'balance': balance})
+    except Exception as e:
+        logger.error(f"Error getting NFT balance: {e}")
+        return jsonify({'success': True, 'balance': 0.0})
+
+
+@learn_earn_bp.route('/mint-nft', methods=['POST'])
+@learn_earn_token_required
+def mint_achievement_nft(current_user):
+    """Mint an Achievement NFT for a completed quiz"""
+    try:
+        from .nft_service import achievement_nft_service
+        data = request.get_json()
+        quiz_id = data.get('quiz_id', '')
+        score = int(data.get('score', 0))
+        total = int(data.get('total', 10))
+        quiz_name = data.get('quiz_name', 'Learn & Earn Quiz')
+
+        if not quiz_id:
+            return jsonify({'success': False, 'error': 'Quiz ID is required'}), 400
+
+        supabase = get_supabase_client()
+        if not supabase:
+            return jsonify({'success': False, 'error': 'Database not available'}), 500
+
+        # Eligibility cutoff — only quizzes taken on or after Feb 11, 2026 can be minted
+        MINT_ELIGIBLE_FROM = datetime(2026, 2, 11, 0, 0, 0)
+        quiz_log_row = supabase.table('learnearn_log')\
+            .select('timestamp')\
+            .eq('quiz_id', quiz_id)\
+            .eq('wallet_address', current_user)\
+            .limit(1)\
+            .execute()
+
+        if quiz_log_row.data:
+            raw_ts = quiz_log_row.data[0].get('timestamp', '')
+            try:
+                quiz_dt = datetime.fromisoformat(raw_ts.replace('Z', '+00:00')).replace(tzinfo=None)
+                if quiz_dt < MINT_ELIGIBLE_FROM:
+                    return jsonify({
+                        'success': False,
+                        'not_eligible': True,
+                        'error': 'This quiz was taken before Feb 11, 2026 and is not eligible for NFT minting.'
+                    }), 403
+            except Exception:
+                pass  # If we can't parse, allow through — backend already verified quiz_id ownership
+
+        existing = supabase.table('achievement_nft_mints')\
+            .select('token_id')\
+            .eq('owner_wallet', current_user)\
+            .eq('quiz_id', quiz_id)\
+            .execute()
+
+        if existing.data and len(existing.data) > 0:
+            return jsonify({'success': True, 'already_minted': True, 'token_id': existing.data[0]['token_id']}), 200
+
+        if not achievement_nft_service.is_configured:
+            return jsonify({'success': False, 'not_deployed': True, 'error': 'NFT contract not deployed yet. Contact admin.'}), 503
+
+        result = achievement_nft_service.mint_nft(current_user, quiz_id, score, total, quiz_name)
+        if not result.get('success'):
+            return jsonify({'success': False, 'error': result.get('error', 'Minting failed')}), 500
+
+        token_id = result.get('token_id', 0)
+        contract_address = os.getenv('ACHIEVEMENT_NFT_CONTRACT_ADDRESS', '')
+
+        mint_data = {
+            'token_id': token_id,
+            'owner_wallet': current_user,
+            'quiz_id': quiz_id,
+            'quiz_name': quiz_name,
+            'score': score,
+            'total': total,
+            'percentage': round((score / total) * 100) if total > 0 else 0,
+            'tx_hash': result.get('tx_hash'),
+            'contract_address': contract_address,
+            'is_listed': False,
+            'list_price': None,
+            'minted_at': datetime.utcnow().isoformat() + 'Z'
+        }
+        supabase.table('achievement_nft_mints').insert(mint_data).execute()
+
+        logger.info(f"✅ NFT #{token_id} minted for {current_user[:8]}... quiz={quiz_id}")
+        return jsonify({
+            'success': True,
+            'token_id': token_id,
+            'tx_hash': result.get('tx_hash'),
+            'explorer_url': result.get('explorer_url')
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error minting NFT: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@learn_earn_bp.route('/check-nft-minted', methods=['GET'])
+@learn_earn_token_required
+def check_nft_minted(current_user):
+    """Check if a quiz has already been minted as an NFT, and whether it is eligible"""
+    try:
+        quiz_id = request.args.get('quiz_id', '')
+        quiz_timestamp = request.args.get('quiz_timestamp', '')  # Optional: passed from frontend
+        if not quiz_id:
+            return jsonify({'success': False, 'already_minted': False, 'not_eligible': False}), 200
+
+        MINT_ELIGIBLE_FROM = datetime(2026, 2, 11, 0, 0, 0)
+
+        # Check eligibility via frontend-supplied timestamp (fast path)
+        if quiz_timestamp:
+            try:
+                quiz_dt = datetime.fromisoformat(quiz_timestamp.replace('Z', '+00:00')).replace(tzinfo=None)
+                if quiz_dt < MINT_ELIGIBLE_FROM:
+                    return jsonify({
+                        'success': True,
+                        'already_minted': False,
+                        'not_eligible': True,
+                        'reason': 'Quiz taken before Feb 11, 2026'
+                    }), 200
+            except Exception:
+                pass
+
+        supabase = get_supabase_client()
+        if not supabase:
+            return jsonify({'success': False, 'already_minted': False, 'not_eligible': False}), 200
+
+        # Also verify eligibility via DB timestamp if not supplied
+        if not quiz_timestamp:
+            quiz_log_row = supabase.table('learnearn_log')\
+                .select('timestamp')\
+                .eq('quiz_id', quiz_id)\
+                .eq('wallet_address', current_user)\
+                .limit(1)\
+                .execute()
+            if quiz_log_row.data:
+                raw_ts = quiz_log_row.data[0].get('timestamp', '')
+                try:
+                    quiz_dt = datetime.fromisoformat(raw_ts.replace('Z', '+00:00')).replace(tzinfo=None)
+                    if quiz_dt < MINT_ELIGIBLE_FROM:
+                        return jsonify({
+                            'success': True,
+                            'already_minted': False,
+                            'not_eligible': True,
+                            'reason': 'Quiz taken before Feb 11, 2026'
+                        }), 200
+                except Exception:
+                    pass
+
+        existing = supabase.table('achievement_nft_mints')\
+            .select('token_id, minted_at')\
+            .eq('owner_wallet', current_user)\
+            .eq('quiz_id', quiz_id)\
+            .execute()
+
+        if existing.data and len(existing.data) > 0:
+            return jsonify({
+                'success': True,
+                'already_minted': True,
+                'not_eligible': False,
+                'token_id': existing.data[0]['token_id'],
+                'minted_at': existing.data[0].get('minted_at')
+            }), 200
+
+        return jsonify({'success': True, 'already_minted': False, 'not_eligible': False}), 200
+
+    except Exception as e:
+        logger.error(f"Error checking NFT mint status: {e}")
+        return jsonify({'success': False, 'already_minted': False, 'not_eligible': False}), 200
+
+
+@learn_earn_bp.route('/nft-marketplace', methods=['GET'])
+def get_nft_marketplace():
+    """Get all NFTs listed for sale on the marketplace"""
+    try:
+        supabase = get_supabase_client()
+        if not supabase:
+            return jsonify({'success': True, 'listings': []})
+
+        result = supabase.table('achievement_nft_mints')\
+            .select('*')\
+            .eq('is_listed', True)\
+            .order('minted_at', desc=True)\
+            .execute()
+
+        listings = result.data if result.data else []
+        contract_address = os.getenv('ACHIEVEMENT_NFT_CONTRACT_ADDRESS', '')
+        for item in listings:
+            if not item.get('contract_address'):
+                item['contract_address'] = contract_address
+
+        return jsonify({'success': True, 'listings': listings})
+
+    except Exception as e:
+        logger.error(f"Error loading NFT marketplace: {e}")
+        return jsonify({'success': True, 'listings': []})
+
+
+@learn_earn_bp.route('/my-nfts', methods=['GET'])
+@learn_earn_token_required
+def get_my_nfts(current_user):
+    """Get all NFTs owned by the current user"""
+    try:
+        supabase = get_supabase_client()
+        if not supabase:
+            return jsonify({'success': True, 'nfts': []})
+
+        result = supabase.table('achievement_nft_mints')\
+            .select('*')\
+            .eq('owner_wallet', current_user)\
+            .order('minted_at', desc=True)\
+            .execute()
+
+        nfts = result.data if result.data else []
+        contract_address = os.getenv('ACHIEVEMENT_NFT_CONTRACT_ADDRESS', '')
+        for nft in nfts:
+            if not nft.get('contract_address'):
+                nft['contract_address'] = contract_address
+
+        return jsonify({'success': True, 'nfts': nfts})
+
+    except Exception as e:
+        logger.error(f"Error getting user NFTs: {e}")
+        return jsonify({'success': True, 'nfts': []})
+
+
+@learn_earn_bp.route('/nft-list', methods=['POST'])
+@learn_earn_token_required
+def list_nft_for_sale(current_user):
+    """List a user's NFT for sale on the marketplace"""
+    try:
+        data = request.get_json()
+        token_id = int(data.get('token_id', 0))
+        price_g = float(data.get('price_g', 0))
+
+        if token_id <= 0 or price_g <= 0:
+            return jsonify({'success': False, 'error': 'Invalid token ID or price'}), 400
+
+        supabase = get_supabase_client()
+        if not supabase:
+            return jsonify({'success': False, 'error': 'Database not available'}), 500
+
+        nft = supabase.table('achievement_nft_mints')\
+            .select('token_id')\
+            .eq('token_id', token_id)\
+            .eq('owner_wallet', current_user)\
+            .execute()
+
+        if not nft.data or len(nft.data) == 0:
+            return jsonify({'success': False, 'error': 'NFT not found or not owned by you'}), 404
+
+        supabase.table('achievement_nft_mints')\
+            .update({'is_listed': True, 'list_price': price_g})\
+            .eq('token_id', token_id)\
+            .eq('owner_wallet', current_user)\
+            .execute()
+
+        logger.info(f"✅ NFT #{token_id} listed for {price_g} G$ by {current_user[:8]}...")
+        return jsonify({'success': True, 'message': f'NFT #{token_id} listed for {price_g} G$'})
+
+    except Exception as e:
+        logger.error(f"Error listing NFT: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@learn_earn_bp.route('/nft-delist', methods=['POST'])
+@learn_earn_token_required
+def delist_nft(current_user):
+    """Remove an NFT from the marketplace"""
+    try:
+        data = request.get_json()
+        token_id = int(data.get('token_id', 0))
+
+        if token_id <= 0:
+            return jsonify({'success': False, 'error': 'Invalid token ID'}), 400
+
+        supabase = get_supabase_client()
+        if not supabase:
+            return jsonify({'success': False, 'error': 'Database not available'}), 500
+
+        supabase.table('achievement_nft_mints')\
+            .update({'is_listed': False, 'list_price': None})\
+            .eq('token_id', token_id)\
+            .eq('owner_wallet', current_user)\
+            .execute()
+
+        logger.info(f"✅ NFT #{token_id} delisted by {current_user[:8]}...")
+        return jsonify({'success': True, 'message': f'NFT #{token_id} removed from marketplace'})
+
+    except Exception as e:
+        logger.error(f"Error delisting NFT: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@learn_earn_bp.route('/nft-burn', methods=['POST'])
+@learn_earn_token_required
+def burn_nft(current_user):
+    """
+    Burn an NFT and receive G$ back.
+    Flow:
+      1. Verify NFT ownership in Supabase
+      2. Check LEARN_EARN contract has enough G$ balance
+      3. Transfer NFT to dead address (burn) via transferByOperator
+      4. Disburse G$ reward to user via LEARN_EARN contract
+      5. Remove NFT record from Supabase
+    Reward = (score / total) * 1000 G$
+    """
+    try:
+        from .nft_service import achievement_nft_service
+
+        data = request.get_json()
+        token_id = int(data.get('token_id', 0))
+
+        if token_id <= 0:
+            return jsonify({'success': False, 'error': 'Invalid token ID'}), 400
+
+        supabase = get_supabase_client()
+        if not supabase:
+            return jsonify({'success': False, 'error': 'Database not available'}), 500
+
+        # 1. Verify ownership
+        nft_res = supabase.table('achievement_nft_mints')\
+            .select('token_id, quiz_id, quiz_name, score, total, is_listed')\
+            .eq('token_id', token_id)\
+            .eq('owner_wallet', current_user)\
+            .execute()
+
+        if not nft_res.data or len(nft_res.data) == 0:
+            return jsonify({'success': False, 'error': 'NFT not found or not owned by you'}), 404
+
+        nft = nft_res.data[0]
+        score = int(nft.get('score', 0))
+        total = int(nft.get('total', 1))
+        quiz_name = nft.get('quiz_name', 'Achievement')
+        quiz_id = nft.get('quiz_id', '')
+
+        # 2. Calculate burn reward: (score/total) × 1000 G$
+        burn_amount = round((score / total) * 1000, 2) if total > 0 else 0
+        if burn_amount <= 0:
+            return jsonify({'success': False, 'error': 'Cannot calculate burn reward'}), 400
+
+        # 3. Check contract balance
+        loop = asyncio.new_event_loop()
+        contract_balance = loop.run_until_complete(learn_blockchain_service.get_contract_balance())
+        loop.close()
+
+        if contract_balance < burn_amount:
+            logger.warning(f"Burn blocked — contract balance {contract_balance:.2f} G$ < needed {burn_amount:.2f} G$")
+            return jsonify({
+                'success': False,
+                'error': f'Please try again once the contract has funds. (Balance: {contract_balance:.0f} G$, Needed: {burn_amount:.0f} G$)'
+            }), 503
+
+        # 4. Burn NFT on-chain (transfer to dead address)
+        burn_result = achievement_nft_service.burn_nft(current_user, token_id)
+        if not burn_result.get('success'):
+            logger.error(f"NFT burn failed for #{token_id}: {burn_result.get('error')}")
+            return jsonify({'success': False, 'error': burn_result.get('error', 'Failed to burn NFT')}), 500
+
+        burn_tx_hash = burn_result.get('tx_hash', '')
+        logger.info(f"🔥 NFT #{token_id} burned on-chain: {burn_tx_hash}")
+
+        # 5. Disburse G$ to user
+        import uuid
+        burn_quiz_id = f"burn_{token_id}_{current_user[-8:].lower()}_{uuid.uuid4().hex[:8]}"
+        loop2 = asyncio.new_event_loop()
+        disburse_result = loop2.run_until_complete(
+            learn_blockchain_service.disburse_quiz_reward(current_user, burn_amount, burn_quiz_id)
+        )
+        loop2.close()
+
+        if not disburse_result.get('success'):
+            logger.error(f"G$ disburse failed after burn for #{token_id}: {disburse_result.get('error')}")
+            return jsonify({
+                'success': False,
+                'error': f"NFT burned but G$ transfer failed: {disburse_result.get('error')}. Contact support with burn TX: {burn_tx_hash}"
+            }), 500
+
+        reward_tx_hash = disburse_result.get('tx_hash', '')
+        logger.info(f"💰 Burn reward {burn_amount} G$ → {current_user[:8]}... TX: {reward_tx_hash}")
+
+        # 6. Save burn record to history table
+        try:
+            supabase.table('nft_burn_history').insert({
+                'token_id': token_id,
+                'quiz_name': quiz_name,
+                'owner_wallet': current_user,
+                'score': score,
+                'total': total,
+                'burn_amount_g': burn_amount,
+                'burn_tx_hash': burn_tx_hash,
+                'reward_tx_hash': reward_tx_hash,
+            }).execute()
+        except Exception as hist_err:
+            logger.warning(f"Could not save burn history: {hist_err}")
+
+        # 7. Remove NFT from Supabase
+        supabase.table('achievement_nft_mints')\
+            .delete()\
+            .eq('token_id', token_id)\
+            .eq('owner_wallet', current_user)\
+            .execute()
+
+        logger.info(f"✅ Burn complete: NFT #{token_id} | {burn_amount} G$ → {current_user[:8]}...")
+        return jsonify({
+            'success': True,
+            'message': f'NFT #{token_id} burned! {burn_amount:.0f} G$ sent to your wallet.',
+            'burn_amount': burn_amount,
+            'burn_tx_hash': burn_tx_hash,
+            'reward_tx_hash': reward_tx_hash,
+            'reward_explorer_url': disburse_result.get('explorer_url', '')
+        })
+
+    except Exception as e:
+        logger.error(f"Error burning NFT: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@learn_earn_bp.route('/nft-operator-address', methods=['GET'])
+def get_nft_operator_address():
+    """Return the app wallet address so the frontend can build the approve() calldata"""
+    try:
+        from .nft_service import achievement_nft_service
+        addr = achievement_nft_service.get_operator_address()
+        if not addr:
+            return jsonify({'success': False, 'error': 'Operator wallet not configured'}), 503
+        return jsonify({'success': True, 'address': addr})
+    except Exception as e:
+        logger.error(f"Error getting operator address: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@learn_earn_bp.route('/nft-buy', methods=['POST'])
+@learn_earn_token_required
+def buy_nft(current_user):
+    """
+    Buy a listed NFT.
+    Flow:
+      1. Frontend calls transfer(seller, price) on G$ — user signs in wallet
+      2. Frontend sends {token_id, g_tx_hash} to this endpoint
+      3. Backend verifies the on-chain transfer, then:
+         a. transferByOperator(seller, buyer, tokenId) on NFT contract (app pays gas)
+      4. Supabase ownership updated
+    """
+    try:
+        from .nft_service import achievement_nft_service
+        from web3 import Web3
+        data = request.get_json()
+        token_id  = int(data.get('token_id', 0))
+        g_tx_hash = (data.get('g_tx_hash') or '').strip()
+
+        if token_id <= 0:
+            return jsonify({'success': False, 'error': 'Invalid token ID'}), 400
+        if not g_tx_hash or not g_tx_hash.startswith('0x'):
+            return jsonify({'success': False, 'error': 'Page outdated — please hard-refresh the page (pull down to reload) and try again.'}), 400
+
+        supabase = get_supabase_client()
+        if not supabase:
+            return jsonify({'success': False, 'error': 'Database not available'}), 500
+
+        nft_result = supabase.table('achievement_nft_mints')\
+            .select('*')\
+            .eq('token_id', token_id)\
+            .eq('is_listed', True)\
+            .execute()
+
+        if not nft_result.data or len(nft_result.data) == 0:
+            return jsonify({'success': False, 'error': 'NFT not found or not listed for sale'}), 404
+
+        nft = nft_result.data[0]
+        seller_wallet = nft['owner_wallet']
+        list_price = float(nft['list_price'])
+
+        if seller_wallet.lower() == current_user.lower():
+            return jsonify({'success': False, 'error': 'You cannot buy your own NFT'}), 400
+
+        if not achievement_nft_service.is_configured:
+            return jsonify({'success': False, 'error': 'NFT service not available'}), 503
+
+        # Step 1: Verify the G$ transfer on-chain (buyer → seller)
+        logger.info(f"🔍 Verifying G$ payment: tx={g_tx_hash[:18]}... buyer={current_user[:8]}... seller={seller_wallet[:8]}... amount={list_price} G$")
+        g_verify = achievement_nft_service.verify_g_transfer(g_tx_hash, current_user, seller_wallet, list_price)
+        if not g_verify.get('success'):
+            return jsonify({
+                'success': False,
+                'error': g_verify.get('error', 'G$ payment verification failed')
+            }), 400
+
+        # Step 2: Transfer NFT from seller to buyer
+        nft_transfer = achievement_nft_service.transfer_nft(seller_wallet, current_user, token_id)
+        if not nft_transfer.get('success'):
+            logger.error(f"❌ NFT transfer failed after G$ was already sent! token={token_id} buyer={current_user[:8]} g_tx={g_tx_hash[:18]}")
+            return jsonify({'success': False, 'error': nft_transfer.get('error', 'NFT transfer failed after payment — contact support with tx: ' + g_tx_hash[:18])}), 500
+
+        # Step 3: Update Supabase ownership
+        supabase.table('achievement_nft_mints')\
+            .update({'owner_wallet': current_user, 'is_listed': False, 'list_price': None})\
+            .eq('token_id', token_id)\
+            .execute()
+
+        # Step 4: Record sale in history
+        try:
+            supabase.table('nft_sale_history').insert({
+                'token_id': token_id,
+                'quiz_name': nft.get('quiz_name', ''),
+                'seller_wallet': seller_wallet,
+                'buyer_wallet': current_user,
+                'price_g': list_price,
+                'g_tx_hash': g_verify.get('tx_hash', g_tx_hash),
+                'nft_tx_hash': nft_transfer.get('tx_hash', '')
+            }).execute()
+        except Exception as history_err:
+            logger.warning(f"⚠️ Could not save sale history: {history_err}")
+
+        # Get updated buyer balance
+        w3 = Web3(Web3.HTTPProvider(os.getenv('CELO_RPC_URL', 'https://forno.celo.org'), request_kwargs={'timeout': 10}))
+        g_dollar_address = os.getenv('G_DOLLAR_TOKEN_ADDRESS', '0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A')
+        erc20_abi = [{"inputs": [{"name": "account", "type": "address"}], "name": "balanceOf", "outputs": [{"type": "uint256"}], "stateMutability": "view", "type": "function"}]
+        token = w3.eth.contract(address=Web3.to_checksum_address(g_dollar_address), abi=erc20_abi)
+        new_balance = token.functions.balanceOf(Web3.to_checksum_address(current_user)).call() / (10 ** 18)
+
+        logger.info(f"✅ NFT #{token_id} sold: {seller_wallet[:8]}... -> {current_user[:8]}... for {list_price} G$")
+        return jsonify({
+            'success': True,
+            'token_id': token_id,
+            'price': list_price,
+            'new_balance': new_balance,
+            'g_tx_hash': g_verify.get('tx_hash'),
+            'nft_tx_hash': nft_transfer.get('tx_hash')
+        })
+
+    except Exception as e:
+        logger.error(f"Error buying NFT: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@learn_earn_bp.route('/nft-sale-history', methods=['GET'])
+def get_nft_sale_history():
+    """Get all NFT sale transaction history (public)"""
+    try:
+        limit = int(request.args.get('limit', 50))
+        supabase = get_supabase_client()
+        if not supabase:
+            return jsonify({'success': False, 'error': 'Database not available'}), 500
+
+        result = supabase.table('nft_sale_history')\
+            .select('*')\
+            .order('sold_at', desc=True)\
+            .limit(limit)\
+            .execute()
+
+        sales = result.data if result.data else []
+        return jsonify({'success': True, 'sales': sales, 'count': len(sales)})
+
+    except Exception as e:
+        logger.error(f"❌ Error fetching NFT sale history: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@learn_earn_bp.route('/nft-burn-history', methods=['GET'])
+@learn_earn_token_required
+def get_nft_burn_history(current_user):
+    """Get burn history for the logged-in user"""
+    try:
+        limit = int(request.args.get('limit', 50))
+        supabase = get_supabase_client()
+        if not supabase:
+            return jsonify({'success': False, 'error': 'Database not available'}), 500
+
+        result = supabase.table('nft_burn_history')\
+            .select('*')\
+            .eq('owner_wallet', current_user)\
+            .order('burned_at', desc=True)\
+            .limit(limit)\
+            .execute()
+
+        burns = result.data if result.data else []
+        return jsonify({'success': True, 'burns': burns, 'count': len(burns)})
+
+    except Exception as e:
+        logger.error(f"❌ Error fetching NFT burn history: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @learn_earn_bp.route('/download-certificate/<cert_id>', methods=['GET'])
 def download_certificate(cert_id):
     """Download a generated sponsorship certificate PNG"""
@@ -2446,412 +2870,6 @@ def download_certificate(cert_id):
     except Exception as e:
         logger.error(f"❌ Error downloading certificate {cert_id}: {e}")
         return jsonify({'error': 'Download failed'}), 500
-
-
-def _get_nft_pg_conn():
-    """Get a psycopg2 connection to Replit's Postgres for NFT tables"""
-    import psycopg2
-    import psycopg2.extras
-    return psycopg2.connect(os.getenv('DATABASE_URL'), cursor_factory=psycopg2.extras.RealDictCursor)
-
-
-def _nft_pg_fetchone(sql, params=()):
-    conn = _get_nft_pg_conn()
-    try:
-        cur = conn.cursor()
-        cur.execute(sql, params)
-        row = cur.fetchone()
-        return dict(row) if row else None
-    finally:
-        conn.close()
-
-
-def _nft_pg_fetchall(sql, params=()):
-    conn = _get_nft_pg_conn()
-    try:
-        cur = conn.cursor()
-        cur.execute(sql, params)
-        rows = cur.fetchall()
-        return [dict(r) for r in rows]
-    finally:
-        conn.close()
-
-
-def _nft_pg_execute(sql, params=()):
-    conn = _get_nft_pg_conn()
-    try:
-        cur = conn.cursor()
-        cur.execute(sql, params)
-        conn.commit()
-    finally:
-        conn.close()
-
-
-@learn_earn_bp.route('/mint-nft', methods=['POST'])
-@learn_earn_token_required
-def mint_achievement_nft(current_user):
-    """Mint an Achievement NFT after completing a quiz. App pays all gas."""
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'success': False, 'error': 'No data provided'}), 400
-
-        quiz_id = data.get('quiz_id', '')
-        score = int(data.get('score', 0))
-        total = int(data.get('total', 0))
-        quiz_name = data.get('quiz_name', 'Learn & Earn Quiz')
-
-        if not quiz_id or total == 0:
-            return jsonify({'success': False, 'error': 'Invalid quiz data'}), 400
-
-        existing = _nft_pg_fetchone(
-            'SELECT id, token_id FROM achievement_nfts WHERE owner_address=%s AND quiz_id=%s',
-            (current_user.lower(), quiz_id)
-        )
-        if existing:
-            return jsonify({
-                'success': True,
-                'already_minted': True,
-                'token_id': existing['token_id'],
-                'message': 'You already minted an NFT for this quiz.'
-            })
-
-        if not achievement_nft_service.is_configured:
-            return jsonify({
-                'success': False,
-                'error': 'NFT contract not deployed yet. Please contact admin.',
-                'not_deployed': True
-            }), 503
-
-        result = achievement_nft_service.mint_nft(
-            to_address=current_user,
-            quiz_id=quiz_id,
-            score=score,
-            total=total,
-            quiz_name=quiz_name
-        )
-
-        if not result.get('success'):
-            return jsonify({'success': False, 'error': result.get('error', 'Minting failed')}), 500
-
-        token_id = result.get('token_id', 0)
-        pct = round((score / total) * 100) if total > 0 else 0
-
-        try:
-            _nft_pg_execute(
-                '''INSERT INTO achievement_nfts
-                   (token_id, owner_address, quiz_id, quiz_name, score, total, percentage, tx_hash, contract_address, minted_at, is_listed)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,NOW(),FALSE)
-                   ON CONFLICT (token_id) DO NOTHING''',
-                (token_id, current_user.lower(), quiz_id, quiz_name, score, total, pct,
-                 result.get('tx_hash'), os.getenv('ACHIEVEMENT_NFT_CONTRACT_ADDRESS', ''))
-            )
-        except Exception as db_err:
-            logger.warning(f"Failed to save NFT to DB: {db_err}")
-
-        logger.info(f"NFT #{token_id} minted for {current_user[:10]}... quiz={quiz_id}")
-
-        return jsonify({
-            'success': True,
-            'token_id': token_id,
-            'tx_hash': result.get('tx_hash'),
-            'explorer_url': result.get('explorer_url'),
-            'message': f'Achievement NFT #{token_id} minted successfully! App paid the gas.'
-        })
-
-    except Exception as e:
-        logger.error(f"Mint NFT error: {e}")
-        return jsonify({'success': False, 'error': 'Minting failed. Please try again.'}), 500
-
-
-@learn_earn_bp.route('/my-nfts', methods=['GET'])
-@learn_earn_token_required
-def get_my_nfts(current_user):
-    """Get all Achievement NFTs owned by the current user"""
-    try:
-        nfts = _nft_pg_fetchall(
-            'SELECT * FROM achievement_nfts WHERE owner_address=%s ORDER BY minted_at DESC',
-            (current_user.lower(),)
-        )
-        for nft in nfts:
-            for k, v in nft.items():
-                if hasattr(v, 'isoformat'):
-                    nft[k] = v.isoformat()
-                elif v is not None and not isinstance(v, (str, int, float, bool)):
-                    nft[k] = str(v)
-        return jsonify({'success': True, 'nfts': nfts, 'count': len(nfts)})
-
-    except Exception as e:
-        logger.error(f"Get my NFTs error: {e}")
-        return jsonify({'success': False, 'error': 'Failed to load NFTs'}), 500
-
-
-@learn_earn_bp.route('/nft-marketplace', methods=['GET'])
-def get_nft_marketplace():
-    """Get all NFTs listed for sale in the marketplace"""
-    try:
-        listings = _nft_pg_fetchall(
-            'SELECT * FROM achievement_nfts WHERE is_listed=TRUE ORDER BY listed_at DESC'
-        )
-        for item in listings:
-            for k, v in item.items():
-                if hasattr(v, 'isoformat'):
-                    item[k] = v.isoformat()
-                elif v is not None and not isinstance(v, (str, int, float, bool)):
-                    item[k] = str(v)
-        return jsonify({'success': True, 'listings': listings, 'count': len(listings)})
-
-    except Exception as e:
-        logger.error(f"Get marketplace error: {e}")
-        return jsonify({'success': False, 'error': 'Failed to load marketplace'}), 500
-
-
-@learn_earn_bp.route('/nft-list', methods=['POST'])
-@learn_earn_token_required
-def list_nft_for_sale(current_user):
-    """List an Achievement NFT for sale in the marketplace"""
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'success': False, 'error': 'No data provided'}), 400
-
-        token_id = int(data.get('token_id', 0))
-        price_g = float(data.get('price_g', 0))
-
-        if token_id <= 0:
-            return jsonify({'success': False, 'error': 'Invalid token ID'}), 400
-        if price_g <= 0:
-            return jsonify({'success': False, 'error': 'Price must be greater than 0'}), 400
-        if price_g > 10000:
-            return jsonify({'success': False, 'error': 'Price cannot exceed 10,000 G$'}), 400
-
-        nft = _nft_pg_fetchone(
-            'SELECT id, is_listed FROM achievement_nfts WHERE token_id=%s AND owner_address=%s',
-            (token_id, current_user.lower())
-        )
-        if not nft:
-            return jsonify({'success': False, 'error': 'NFT not found or not owned by you'}), 404
-        if nft.get('is_listed'):
-            return jsonify({'success': False, 'error': 'NFT is already listed for sale'}), 400
-
-        _nft_pg_execute(
-            'UPDATE achievement_nfts SET is_listed=TRUE, list_price=%s, listed_at=NOW() WHERE token_id=%s',
-            (price_g, token_id)
-        )
-
-        logger.info(f"NFT #{token_id} listed for {price_g} G$ by {current_user[:10]}...")
-
-        return jsonify({
-            'success': True,
-            'token_id': token_id,
-            'price_g': price_g,
-            'message': f'NFT #{token_id} listed for {price_g} G$!'
-        })
-
-    except Exception as e:
-        logger.error(f"List NFT error: {e}")
-        return jsonify({'success': False, 'error': 'Failed to list NFT'}), 500
-
-
-@learn_earn_bp.route('/nft-delist', methods=['POST'])
-@learn_earn_token_required
-def delist_nft(current_user):
-    """Remove an NFT listing from the marketplace"""
-    try:
-        data = request.get_json()
-        token_id = int(data.get('token_id', 0))
-
-        if token_id <= 0:
-            return jsonify({'success': False, 'error': 'Invalid token ID'}), 400
-
-        nft = _nft_pg_fetchone(
-            'SELECT id FROM achievement_nfts WHERE token_id=%s AND owner_address=%s',
-            (token_id, current_user.lower())
-        )
-        if not nft:
-            return jsonify({'success': False, 'error': 'NFT not found or not owned by you'}), 404
-
-        _nft_pg_execute(
-            'UPDATE achievement_nfts SET is_listed=FALSE, list_price=NULL, listed_at=NULL WHERE token_id=%s',
-            (token_id,)
-        )
-
-        return jsonify({'success': True, 'message': f'NFT #{token_id} removed from marketplace.'})
-
-    except Exception as e:
-        logger.error(f"Delist NFT error: {e}")
-        return jsonify({'success': False, 'error': 'Failed to delist NFT'}), 500
-
-
-@learn_earn_bp.route('/nft-buy', methods=['POST'])
-@learn_earn_token_required
-def buy_nft(current_user):
-    """
-    Buy a listed NFT. App pays gas for on-chain transfer.
-    G$ payment is deducted from buyer's marketplace balance (earned from quizzes).
-    """
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'success': False, 'error': 'No data provided'}), 400
-
-        token_id = int(data.get('token_id', 0))
-        if token_id <= 0:
-            return jsonify({'success': False, 'error': 'Invalid token ID'}), 400
-
-        nft = _nft_pg_fetchone(
-            'SELECT * FROM achievement_nfts WHERE token_id=%s AND is_listed=TRUE',
-            (token_id,)
-        )
-        if not nft:
-            return jsonify({'success': False, 'error': 'NFT not found or not listed for sale'}), 404
-
-        seller_address = nft['owner_address']
-        price_g = float(nft['list_price'])
-
-        if seller_address.lower() == current_user.lower():
-            return jsonify({'success': False, 'error': 'You cannot buy your own NFT'}), 400
-
-        buyer_row = _nft_pg_fetchone(
-            'SELECT balance FROM nft_marketplace_balance WHERE wallet_address=%s',
-            (current_user.lower(),)
-        )
-        buyer_balance = float(buyer_row['balance']) if buyer_row else 0.0
-
-        if buyer_balance < price_g:
-            return jsonify({
-                'success': False,
-                'error': f'Insufficient marketplace balance. You have {buyer_balance:.2f} G$, need {price_g:.2f} G$.',
-                'buyer_balance': buyer_balance,
-                'price': price_g
-            }), 400
-
-        if not achievement_nft_service.is_configured:
-            return jsonify({
-                'success': False,
-                'error': 'NFT contract not configured. Contact admin.',
-                'not_deployed': True
-            }), 503
-
-        transfer_result = achievement_nft_service.transfer_nft(
-            from_address=seller_address,
-            to_address=current_user,
-            token_id=token_id
-        )
-
-        if not transfer_result.get('success'):
-            return jsonify({
-                'success': False,
-                'error': f"On-chain transfer failed: {transfer_result.get('error', 'Unknown error')}"
-            }), 500
-
-        new_buyer_balance = buyer_balance - price_g
-
-        if buyer_row:
-            _nft_pg_execute(
-                'UPDATE nft_marketplace_balance SET balance=%s, updated_at=NOW() WHERE wallet_address=%s',
-                (new_buyer_balance, current_user.lower())
-            )
-        else:
-            _nft_pg_execute(
-                'INSERT INTO nft_marketplace_balance (wallet_address, balance) VALUES (%s, %s)',
-                (current_user.lower(), new_buyer_balance)
-            )
-
-        seller_row = _nft_pg_fetchone(
-            'SELECT balance FROM nft_marketplace_balance WHERE wallet_address=%s',
-            (seller_address.lower(),)
-        )
-        seller_balance = float(seller_row['balance']) if seller_row else 0.0
-        new_seller_balance = seller_balance + price_g
-
-        if seller_row:
-            _nft_pg_execute(
-                'UPDATE nft_marketplace_balance SET balance=%s, updated_at=NOW() WHERE wallet_address=%s',
-                (new_seller_balance, seller_address.lower())
-            )
-        else:
-            _nft_pg_execute(
-                'INSERT INTO nft_marketplace_balance (wallet_address, balance) VALUES (%s, %s)',
-                (seller_address.lower(), new_seller_balance)
-            )
-
-        _nft_pg_execute(
-            '''UPDATE achievement_nfts SET
-               owner_address=%s, is_listed=FALSE, list_price=NULL, listed_at=NULL,
-               last_sale_price=%s, last_sold_at=NOW()
-               WHERE token_id=%s''',
-            (current_user.lower(), price_g, token_id)
-        )
-
-        try:
-            _nft_pg_execute(
-                '''INSERT INTO nft_marketplace_transactions
-                   (token_id, seller_address, buyer_address, price_g, tx_hash, sold_at)
-                   VALUES (%s,%s,%s,%s,%s,NOW())''',
-                (token_id, seller_address.lower(), current_user.lower(),
-                 price_g, transfer_result.get('tx_hash'))
-            )
-        except Exception:
-            pass
-
-        logger.info(f"NFT #{token_id} sold: {seller_address[:10]}... -> {current_user[:10]}... for {price_g} G$")
-
-        return jsonify({
-            'success': True,
-            'token_id': token_id,
-            'price_paid': price_g,
-            'tx_hash': transfer_result.get('tx_hash'),
-            'explorer_url': transfer_result.get('explorer_url'),
-            'new_balance': new_buyer_balance,
-            'message': f'You bought NFT #{token_id} for {price_g} G$!'
-        })
-
-    except Exception as e:
-        logger.error(f"Buy NFT error: {e}")
-        return jsonify({'success': False, 'error': 'Purchase failed. Please try again.'}), 500
-
-
-@learn_earn_bp.route('/nft-balance', methods=['GET'])
-@learn_earn_token_required
-def get_nft_marketplace_balance(current_user):
-    """Get the user's marketplace G$ balance"""
-    try:
-        row = _nft_pg_fetchone(
-            'SELECT balance FROM nft_marketplace_balance WHERE wallet_address=%s',
-            (current_user.lower(),)
-        )
-        balance = float(row['balance']) if row else 0.0
-        return jsonify({'success': True, 'balance': balance})
-
-    except Exception as e:
-        logger.error(f"Get NFT balance error: {e}")
-        return jsonify({'success': False, 'balance': 0.0}), 500
-
-
-@learn_earn_bp.route('/nft-info', methods=['GET'])
-def get_nft_contract_info():
-    """Get NFT contract info and stats"""
-    try:
-        contract_address = os.getenv('ACHIEVEMENT_NFT_CONTRACT_ADDRESS', '')
-        total_supply = 0
-
-        if achievement_nft_service.is_configured:
-            total_supply = achievement_nft_service.get_total_supply()
-
-        return jsonify({
-            'success': True,
-            'contract_address': contract_address,
-            'total_supply': total_supply,
-            'network': 'Celo Mainnet',
-            'chain_id': 42220,
-            'is_deployed': bool(contract_address),
-            'explorer_url': f'https://celoscan.io/token/{contract_address}' if contract_address else None
-        })
-
-    except Exception as e:
-        logger.error(f"Get NFT info error: {e}")
-        return jsonify({'success': False, 'error': 'Failed to get NFT info'}), 500
 
 
 def init_learn_and_earn(app):
@@ -2880,6 +2898,13 @@ def init_learn_and_earn(app):
         logger.info("   POST /learn-earn/submit-quiz - Submit quiz answers")
         logger.info("   GET  /learn-earn/quiz-history - Get quiz history")
         logger.info("   GET  /learn-earn/stats - Get system stats")
+        logger.info("   GET  /learn-earn/nft-balance - Get G$ balance for NFT marketplace")
+        logger.info("   POST /learn-earn/mint-nft - Mint Achievement NFT")
+        logger.info("   GET  /learn-earn/nft-marketplace - Browse listed NFTs")
+        logger.info("   GET  /learn-earn/my-nfts - Get user's NFTs")
+        logger.info("   POST /learn-earn/nft-list - List NFT for sale")
+        logger.info("   POST /learn-earn/nft-delist - Remove NFT from sale")
+        logger.info("   POST /learn-earn/nft-buy - Purchase a listed NFT")
 
         return True
 
