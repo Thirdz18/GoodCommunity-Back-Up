@@ -145,8 +145,17 @@ class AchievementNFTService:
 
             receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
 
+            if receipt.status != 1:
+                logger.error(f"❌ Transaction REVERTED on-chain: tx={tx_hash_hex} status={receipt.status} gasUsed={receipt.gasUsed}")
+                return {
+                    "success": False,
+                    "tx_hash": tx_hash_hex,
+                    "error": f"Transaction reverted on-chain (tx={tx_hash_hex[:18]}...). Check celoscan.io for details.",
+                    "gas_used": receipt.gasUsed,
+                }
+
             return {
-                "success": receipt.status == 1,
+                "success": True,
                 "tx_hash": tx_hash_hex,
                 "gas_used": receipt.gasUsed,
                 "block_number": receipt.blockNumber,
@@ -154,7 +163,7 @@ class AchievementNFTService:
             }
 
         except Exception as e:
-            logger.error(f"NFT transaction error: {e}")
+            logger.error(f"NFT transaction error: {e}", exc_info=True)
             return {"success": False, "error": str(e)}
 
     def mint_nft(self, to_address: str, quiz_id: str, score: int, total: int,
@@ -276,6 +285,118 @@ class AchievementNFTService:
         except Exception as e:
             logger.error(f"Error getting owner tokens: {e}")
             return []
+
+    def get_operator_address(self) -> str:
+        """Return the operator (app) wallet address"""
+        if self.operator_account:
+            return self.operator_account.address
+        return ''
+
+    def verify_g_transfer(self, tx_hash: str, from_address: str, to_address: str, amount_g: float, retries: int = 3) -> dict:
+        """
+        Verify that a G$ transfer(from → to, amount) occurred in tx_hash.
+        The user sends G$ directly via transfer() — no approve/transferFrom needed.
+
+        Args:
+            tx_hash:      Transaction hash of the user's transfer() tx
+            from_address: Expected sender (buyer)
+            to_address:   Expected recipient (seller)
+            amount_g:     Required amount in G$ (human-readable)
+            retries:      Times to retry if tx not yet mined
+
+        Returns:
+            dict with success, verified
+        """
+        import time
+        g_dollar_address = os.getenv('G_DOLLAR_TOKEN_ADDRESS', '0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A').lower()
+        # keccak256("Transfer(address,address,uint256)")
+        transfer_topic = self.w3.keccak(text="Transfer(address,address,uint256)").hex()
+        if not transfer_topic.startswith('0x'):
+            transfer_topic = '0x' + transfer_topic
+        amount_wei = int(amount_g * (10 ** 18))
+
+        for attempt in range(retries):
+            try:
+                receipt = self.w3.eth.get_transaction_receipt(tx_hash)
+                if receipt is None:
+                    logger.info(f"Tx {tx_hash[:18]}... not yet mined, waiting... (attempt {attempt+1}/{retries})")
+                    time.sleep(5)
+                    continue
+
+                if receipt.status != 1:
+                    return {"success": False, "error": f"G$ payment transaction failed on-chain (status=0). tx={tx_hash[:18]}..."}
+
+                # Decode Transfer events from the G$ token contract
+                for log in receipt.logs:
+                    if log.address.lower() != g_dollar_address:
+                        continue
+                    if not log.topics or log.topics[0].hex() not in (transfer_topic, transfer_topic.lstrip('0x')):
+                        continue
+                    if len(log.topics) < 3:
+                        continue
+
+                    log_from = '0x' + log.topics[1].hex()[-40:]
+                    log_to   = '0x' + log.topics[2].hex()[-40:]
+                    log_amt  = int(log.data.hex(), 16) if log.data else 0
+
+                    logger.info(f"🔍 Transfer event: from={log_from[:10]}... to={log_to[:10]}... amount={log_amt / 10**18:.4f} G$")
+
+                    if (log_from.lower() == from_address.lower()
+                            and log_to.lower() == to_address.lower()
+                            and log_amt >= amount_wei):
+                        logger.info(f"✅ G$ transfer verified: {amount_g} G$ buyer→seller tx={tx_hash[:18]}...")
+                        return {"success": True, "verified": True, "tx_hash": tx_hash}
+
+                return {"success": False, "error": f"G$ Transfer event not found in tx. Expected {amount_g} G$ from buyer to seller. tx={tx_hash[:18]}..."}
+
+            except Exception as e:
+                if attempt < retries - 1:
+                    time.sleep(3)
+                    continue
+                logger.error(f"verify_g_transfer error: {e}", exc_info=True)
+                return {"success": False, "error": str(e)}
+
+        return {"success": False, "error": "G$ payment tx not yet mined after retries. Please try again in a moment."}
+
+    def burn_nft(self, owner_address: str, token_id: int) -> dict:
+        """
+        Burn an NFT by transferring it to the dead address (0x000...dEaD).
+        App wallet pays gas via operator privilege.
+
+        Args:
+            owner_address: Current owner's wallet address
+            token_id: NFT token ID to burn
+
+        Returns:
+            dict with success, tx_hash
+        """
+        if not self.is_configured:
+            return {"success": False, "error": "NFT service not configured"}
+
+        dead_address = Web3.to_checksum_address("0x000000000000000000000000000000000000dEaD")
+
+        try:
+            current_owner = self.contract.functions.ownerOf(token_id).call()
+            if current_owner.lower() != owner_address.lower():
+                return {"success": False, "error": "Token owner mismatch — cannot burn NFT you do not own"}
+
+            result = self._send_transaction(
+                self.contract.functions.transferByOperator(
+                    Web3.to_checksum_address(owner_address),
+                    dead_address,
+                    token_id
+                ),
+                gas_limit=300000
+            )
+
+            if result["success"]:
+                logger.info(f"🔥 NFT #{token_id} burned by {owner_address[:10]}... → dEaD")
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Burn error: {e}")
+            return {"success": False, "error": str(e)}
 
     def get_total_supply(self) -> int:
         """Get total number of minted NFTs"""
