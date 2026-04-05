@@ -2,7 +2,6 @@ beautifulsoup4>=4.14.2
 email-validator>=2.3.0
 eth-account>=0.13.7
 flask>=3.1.2
-fla>=1.23
 flask-sqlalchemy>=3.1.1
 gunicorn>=23.0.0
 lxml>=6.0.2
@@ -16,13 +15,3 @@ pytz>=2025.2
 requests>=2.32.5
 supabase>=2.18.1
 web3>=7.13.0
-email_validator
-flask
-flask-sqlalchemy
-gunicorn
-psycopg2-binary
-email_validator
-flask
-flask-sqlalchemy
-gunicorn
-psycopg2-binary
