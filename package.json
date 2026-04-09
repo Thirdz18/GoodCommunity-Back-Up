@@ -1,10 +1,16 @@
 {
-  "name": "goodmarket-wc-service",
+  "name": "workspace",
   "version": "1.0.0",
   "type": "module",
-  "description": "Server-side WalletConnect v2 session service",
+  "description": "A Web3 earning platform built on the GoodDollar ecosystem that enables users to earn G$ tokens through educational quizzes, social media tasks, minigames, and community engagement. The platform integrates with the Celo blockchain for token disbursements and uses Supabase for persistent data storage.",
   "main": "wc_service.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "@walletconnect/sign-client": "2.17.0"
+    "@walletconnect/sign-client": "^2.17.0"
   }
 }
