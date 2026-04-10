@@ -1,4 +1,4 @@
-modules = ["web", "python-3.12", "nodejs-20"]
+modules = ["web", "python-3.12", "nodejs-20", "postgresql-16"]
 [agent]
 expertMode = true
 
@@ -35,11 +35,10 @@ localPort = 5000
 externalPort = 80
 
 [deployment]
-run = ["sh", "-c", "gunicorn --config gunicorn.conf.py main:app"]
-deploymentTarget = "cloudrun"
+run = ["gunicorn", "--config", "gunicorn.conf.py", "main:app"]
+deploymentTarget = "autoscale"
 
 [userenv]
 
 [userenv.shared]
 TRANSAK_ENV = "PRODUCTION"
-SAVINGS_CONTRACT_ADDRESS = "0x89BCa9108F4d1ec9Eef17E0a7F5f91266c9B3A9e"
